@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { Bot, Send, User, X, MessageSquare, Loader2, Minimize2, Maximize2 } from 'lucide-react';
+import { Bot, Send, User, X, Loader2, Minimize2, Maximize2, Mic, MicOff } from 'lucide-react';
 import { cn } from '../lib/utils';
 import { useAppContext } from '../store';
 import { AirQualityData } from '../types';
@@ -10,7 +10,7 @@ interface Message {
 }
 
 export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data }) => {
-  const { profiles, activeProfileId, activeProfile, currentLocation } = useAppContext();
+  const { profiles, activeProfile, currentLocation } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
@@ -18,7 +18,11 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [isListening, setIsListening] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState(true);
+
   const messagesEndRef = useRef<HTMLDivElement>(null);
+  const recognitionRef = useRef<any>(null);
 
   useEffect(() => {
     if (messagesEndRef.current) {
@@ -26,9 +30,70 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
     }
   }, [messages, isOpen, isMinimized]);
 
+  useEffect(() => {
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      setSpeechSupported(false);
+    }
+  }, []);
+
+  const toggleVoiceInput = () => {
+    if (isListening) {
+      if (recognitionRef.current) {
+        recognitionRef.current.stop();
+      }
+      setIsListening(false);
+      return;
+    }
+
+    const SpeechRecognition = (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+    if (!SpeechRecognition) {
+      alert("Váš prohlížeč nepodporuje hlasové rozpoznávání. Použijte prosím Google Chrome, Microsoft Edge nebo Safari.");
+      return;
+    }
+
+    try {
+      const recognition = new SpeechRecognition();
+      recognition.lang = 'cs-CZ';
+      recognition.continuous = false;
+      recognition.interimResults = true;
+
+      recognition.onstart = () => {
+        setIsListening(true);
+      };
+
+      recognition.onresult = (event: any) => {
+        const transcript = Array.from(event.results)
+          .map((result: any) => result[0].transcript)
+          .join('');
+        setInput(transcript);
+      };
+
+      recognition.onerror = (event: any) => {
+        console.error("Speech recognition error:", event.error);
+        setIsListening(false);
+      };
+
+      recognition.onend = () => {
+        setIsListening(false);
+      };
+
+      recognitionRef.current = recognition;
+      recognition.start();
+    } catch (e) {
+      console.error(e);
+      setIsListening(false);
+    }
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!input.trim() || isLoading) return;
+
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      setIsListening(false);
+    }
 
     const userMsg = input.trim();
     setInput('');
@@ -85,7 +150,7 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
   return (
     <div className={cn(
       "fixed right-4 md:right-6 bottom-4 md:bottom-6 z-50 bg-white rounded-3xl shadow-2xl shadow-indigo-900/10 border border-indigo-100 flex flex-col transition-all duration-300 overflow-hidden",
-      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[520px]"
+      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[530px]"
     )}>
       {/* Header */}
       <div 
@@ -155,6 +220,22 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
             <div ref={messagesEndRef} />
           </div>
 
+          {/* Listening Indicator */}
+          {isListening && (
+            <div className="px-4 py-1.5 bg-red-50 border-t border-red-100 flex items-center justify-between text-xs text-red-600 animate-pulse">
+              <span className="flex items-center gap-1.5 font-medium">
+                <span className="w-2 h-2 rounded-full bg-red-500 animate-ping" />
+                Poslouchám... mluvte česky
+              </span>
+              <button 
+                onClick={toggleVoiceInput}
+                className="text-[11px] font-bold text-red-700 underline hover:no-underline"
+              >
+                Zastavit
+              </button>
+            </div>
+          )}
+
           {/* Input Area */}
           <div className="p-3 bg-white border-t border-slate-100">
             <form onSubmit={handleSubmit} className="relative flex items-center">
@@ -162,17 +243,42 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Zeptejte se na děti, výlet, pyly..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                placeholder={isListening ? "Mluvte nyní..." : "Zeptejte se na děti, výlet, pyly..."}
+                className={cn(
+                  "w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-20 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50",
+                  isListening && "border-red-300 bg-red-50/20"
+                )}
                 disabled={isLoading}
               />
-              <button 
-                type="submit"
-                disabled={!input.trim() || isLoading}
-                className="absolute right-1.5 p-1.5 text-indigo-500 hover:text-indigo-600 disabled:text-slate-300 disabled:hover:text-slate-300 transition-colors bg-white rounded-lg"
-              >
-                <Send className="w-4 h-4" />
-              </button>
+              
+              <div className="absolute right-1.5 flex items-center gap-1">
+                {/* Voice Input Button */}
+                {speechSupported && (
+                  <button
+                    type="button"
+                    onClick={toggleVoiceInput}
+                    title={isListening ? "Zastavit diktování" : "Hlasové zadávání"}
+                    className={cn(
+                      "p-1.5 rounded-lg transition-all",
+                      isListening
+                        ? "bg-red-500 text-white animate-bounce shadow-md shadow-red-200"
+                        : "text-slate-400 hover:text-indigo-600 hover:bg-indigo-50"
+                    )}
+                  >
+                    {isListening ? <MicOff className="w-4 h-4" /> : <Mic className="w-4 h-4" />}
+                  </button>
+                )}
+
+                {/* Send Button */}
+                <button 
+                  type="submit"
+                  disabled={!input.trim() || isLoading}
+                  title="Odeslat zprávu"
+                  className="p-1.5 text-indigo-500 hover:text-indigo-600 disabled:text-slate-300 disabled:hover:text-slate-300 transition-colors bg-white rounded-lg"
+                >
+                  <Send className="w-4 h-4" />
+                </button>
+              </div>
             </form>
           </div>
         </>
