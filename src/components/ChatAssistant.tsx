@@ -56,13 +56,15 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
         })
       });
 
-      if (!res.ok) throw new Error('API Error');
-      const resData = await res.json();
+      const resData = await res.json().catch(() => ({}));
+      if (!res.ok) {
+        throw new Error(resData.error || 'Server vrátil chybu při komunikaci s AI.');
+      }
 
       setMessages(prev => [...prev, { role: 'assistant', content: resData.reply }]);
-    } catch (error) {
+    } catch (error: any) {
       console.error(error);
-      setMessages(prev => [...prev, { role: 'assistant', content: 'Omlouvám se, ale momentálně se mi nedaří spojit se serverem. Zkuste to prosím později.' }]);
+      setMessages(prev => [...prev, { role: 'assistant', content: `Omlouvám se: ${error.message || 'Nepodařilo se spojit se serverem.'}` }]);
     } finally {
       setIsLoading(false);
     }

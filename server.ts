@@ -6,8 +6,6 @@ import dotenv from "dotenv";
 
 dotenv.config();
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 async function startServer() {
   const app = express();
   const PORT = 3000;
@@ -16,8 +14,16 @@ async function startServer() {
 
   // API routes
   app.post("/api/chat", async (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+      return res.status(400).json({ 
+        error: "Chybí platný GEMINI_API_KEY v souboru .env" 
+      });
+    }
+
     try {
-      const { messages, context } = req.body;
+      const ai = new GoogleGenAI({ apiKey });
+      const { messages, context } = req.body || {};
       
       const systemInstruction = `Jsi asistent v aplikaci AlergoMapa, která radí rodičům a uživatelům ohledně alergií (pyly, potraviny, zvířata, roztoče) a sleduje kvalitu ovzduší.
 Odpovídej stručně, empaticky, srozumitelně a výhradně v češtině.
@@ -28,23 +34,40 @@ Tady jsou data z kontextu aplikace:
 ${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}
 `;
 
-      const formattedMessages = messages.map((msg: any) => ({
+      const formattedMessages = (messages || []).map((msg: any) => ({
         role: msg.role === 'user' ? 'user' : 'model',
         parts: [{ text: msg.content }]
       }));
 
-      const response = await ai.models.generateContent({
-        model: "gemini-2.5-flash",
-        contents: formattedMessages,
-        config: {
-          systemInstruction,
-        }
-      });
+      let replyText = "";
+      const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+      let lastError: any = null;
 
-      res.json({ reply: response.text });
-    } catch (error) {
+      for (const modelName of modelsToTry) {
+        try {
+          const response = await ai.models.generateContent({
+            model: modelName,
+            contents: formattedMessages,
+            config: { systemInstruction }
+          });
+          if (response && response.text) {
+            replyText = response.text;
+            break;
+          }
+        } catch (err: any) {
+          console.warn(`Model ${modelName} failed:`, err.message);
+          lastError = err;
+        }
+      }
+
+      if (!replyText) {
+        throw lastError || new Error("Žádný AI model nevytvořil odpověď.");
+      }
+
+      res.json({ reply: replyText });
+    } catch (error: any) {
       console.error("Error calling Gemini API:", error);
-      res.status(500).json({ error: "Nepodařilo se vygenerovat odpověď." });
+      res.status(500).json({ error: error.message || "Nepodařilo se vygenerovat odpověď." });
     }
   });
 

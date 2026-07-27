@@ -1,13 +1,19 @@
 import { GoogleGenAI } from "@google/genai";
 
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
-
 export default async function handler(req: any, res: any) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method Not Allowed' });
   }
 
+  const apiKey = process.env.GEMINI_API_KEY;
+  if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+    return res.status(400).json({ 
+      error: "Chybí platný GEMINI_API_KEY. Ujistěte se, že máte klíč v souboru .env nebo v Environment Variables na Vercelu." 
+    });
+  }
+
   try {
+    const ai = new GoogleGenAI({ apiKey });
     const { messages, context } = req.body || {};
     
     const systemInstruction = `Jsi asistent v aplikaci AlergoMapa, která radí rodičům a uživatelům ohledně alergií (pyly, potraviny, zvířata, roztoče) a sleduje kvalitu ovzduší.
@@ -24,17 +30,34 @@ ${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}
       parts: [{ text: msg.content }]
     }));
 
-    const response = await ai.models.generateContent({
-      model: "gemini-2.5-flash",
-      contents: formattedMessages,
-      config: {
-        systemInstruction,
-      }
-    });
+    let replyText = "";
+    const modelsToTry = ["gemini-2.5-flash", "gemini-2.0-flash", "gemini-1.5-flash"];
+    let lastError: any = null;
 
-    return res.status(200).json({ reply: response.text });
-  } catch (error) {
+    for (const modelName of modelsToTry) {
+      try {
+        const response = await ai.models.generateContent({
+          model: modelName,
+          contents: formattedMessages,
+          config: { systemInstruction }
+        });
+        if (response && response.text) {
+          replyText = response.text;
+          break;
+        }
+      } catch (err: any) {
+        console.warn(`Model ${modelName} call failed:`, err.message);
+        lastError = err;
+      }
+    }
+
+    if (!replyText) {
+      throw lastError || new Error("Žádný AI model nevytvořil odpověď.");
+    }
+
+    return res.status(200).json({ reply: replyText });
+  } catch (error: any) {
     console.error("Error calling Gemini API:", error);
-    return res.status(500).json({ error: "Nepodařilo se vygenerovat odpověď." });
+    return res.status(500).json({ error: error.message || "Nepodařilo se vygenerovat odpověď." });
   }
 }
