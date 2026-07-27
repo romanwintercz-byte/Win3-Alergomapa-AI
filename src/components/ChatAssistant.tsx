@@ -10,11 +10,11 @@ interface Message {
 }
 
 export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data }) => {
-  const { trackedAllergens, customAllergens, currentLocation } = useAppContext();
+  const { profiles, activeProfileId, activeProfile, currentLocation } = useAppContext();
   const [isOpen, setIsOpen] = useState(false);
   const [isMinimized, setIsMinimized] = useState(false);
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'assistant', content: 'Dobrý den! Jsem váš AI asistent pro alergie a kvalitu ovzduší. S čím vám mohu poradit?' }
+    { role: 'assistant', content: 'Dobrý den! Jsem váš AI asistent pro celou rodinu. Rády poradím ohledně pylové situace a alergií pro vás i vaše děti. S čím vám mohu pomoci?' }
   ]);
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
@@ -38,8 +38,12 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
     try {
       const context = {
         location: currentLocation,
-        trackedPollen: trackedAllergens,
-        personalAllergens: customAllergens,
+        activeProfileMode: activeProfile ? activeProfile.name : 'Rodinný přehled (všichni)',
+        familyProfiles: profiles.map(p => ({
+          name: p.name,
+          trackedPollen: p.trackedAllergens,
+          personalAllergens: p.customAllergens.map(ca => `${ca.name} (${ca.category})`)
+        })),
         currentAirQualityData: data?.current
       };
 
@@ -78,19 +82,24 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
 
   return (
     <div className={cn(
-      "fixed right-4 md:right-6 bottom-4 md:bottom-6 z-50 bg-white rounded-2xl shadow-2xl shadow-indigo-900/10 border border-indigo-100 flex flex-col transition-all duration-300 overflow-hidden",
-      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[500px]"
+      "fixed right-4 md:right-6 bottom-4 md:bottom-6 z-50 bg-white rounded-3xl shadow-2xl shadow-indigo-900/10 border border-indigo-100 flex flex-col transition-all duration-300 overflow-hidden",
+      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[520px]"
     )}>
       {/* Header */}
       <div 
-        className="flex items-center justify-between p-3 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white cursor-pointer select-none"
+        className="flex items-center justify-between p-3.5 bg-gradient-to-r from-indigo-600 to-indigo-500 text-white cursor-pointer select-none"
         onClick={() => setIsMinimized(!isMinimized)}
       >
         <div className="flex items-center gap-2">
-          <div className="bg-white/20 p-1.5 rounded-lg">
+          <div className="bg-white/20 p-1.5 rounded-xl">
             <Bot className="w-4 h-4" />
           </div>
-          <span className="font-semibold text-sm">AI Asistent</span>
+          <div>
+            <span className="font-bold text-sm block leading-none">AI Rodinný Asistent</span>
+            <span className="text-[10px] text-indigo-100">
+              {activeProfile ? `Profil: ${activeProfile.name}` : 'Rodinný přehled'}
+            </span>
+          </div>
         </div>
         <div className="flex items-center gap-1">
           <button 
@@ -121,7 +130,7 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
                   {msg.role === 'user' ? <User className="w-4 h-4" /> : <Bot className="w-4 h-4" />}
                 </div>
                 <div className={cn(
-                  "max-w-[75%] px-4 py-2.5 rounded-2xl text-sm leading-relaxed shadow-sm",
+                  "max-w-[78%] px-4 py-2.5 rounded-2xl text-xs sm:text-sm leading-relaxed shadow-sm",
                   msg.role === 'user' 
                     ? "bg-indigo-600 text-white rounded-br-sm" 
                     : "bg-white text-slate-700 border border-slate-100 rounded-bl-sm"
@@ -137,7 +146,7 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
                 </div>
                 <div className="max-w-[75%] px-4 py-3 rounded-2xl bg-white border border-slate-100 rounded-bl-sm shadow-sm flex items-center gap-2">
                   <Loader2 className="w-4 h-4 animate-spin text-indigo-400" />
-                  <span className="text-sm text-slate-400">Přemýšlí...</span>
+                  <span className="text-xs text-slate-400">Přemýšlím...</span>
                 </div>
               </div>
             )}
@@ -151,8 +160,8 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
                 type="text"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
-                placeholder="Zeptejte se na alergie..."
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                placeholder="Zeptejte se na děti, výlet, pyly..."
+                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-4 pr-12 py-2.5 text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
                 disabled={isLoading}
               />
               <button 

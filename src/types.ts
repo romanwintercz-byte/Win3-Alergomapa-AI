@@ -48,3 +48,13 @@ export interface CustomAllergen {
   name: string;
   category: CustomAllergenCategory;
 }
+
+export interface UserProfile {
+  id: string;
+  name: string;
+  avatarEmoji: string;
+  trackedAllergens: AllergenKey[];
+  customAllergens: CustomAllergen[];
+  color?: string;
+}
+

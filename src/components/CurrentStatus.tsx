@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { AirQualityData } from '../types';
 import { ALLERGENS, getPollenLevel } from '../data/allergens';
 import { useAppContext } from '../store';
-import { Leaf, Info } from 'lucide-react';
+import { Leaf, Info, ShieldAlert, CheckCircle2, AlertTriangle } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 interface CurrentStatusProps {
@@ -10,7 +10,7 @@ interface CurrentStatusProps {
 }
 
 export const CurrentStatus: React.FC<CurrentStatusProps> = ({ data }) => {
-  const { trackedAllergens, toggleAllergen } = useAppContext();
+  const { profiles, activeProfileId, activeProfile, trackedAllergens, toggleAllergen } = useAppContext();
 
   const currentLevels = useMemo(() => {
     return ALLERGENS.map(allergen => ({
@@ -19,6 +19,21 @@ export const CurrentStatus: React.FC<CurrentStatusProps> = ({ data }) => {
       level: getPollenLevel(data.current[allergen.apiField] as number || 0)
     })).sort((a, b) => b.value - a.value); // Highest first
   }, [data]);
+
+  // Compute family member risk status when in Family Overview ('all')
+  const familyRiskSummary = useMemo(() => {
+    return profiles.map(profile => {
+      const memberLevels = currentLevels.filter(a => profile.trackedAllergens.includes(a.id));
+      const highestRisk = memberLevels.reduce((max, a) => Math.max(max, a.level.score), 0);
+      const highRiskAllergens = memberLevels.filter(a => a.level.score >= 1);
+
+      return {
+        profile,
+        highestRisk,
+        highRiskAllergens
+      };
+    });
+  }, [profiles, currentLevels]);
 
   const activeAllergens = currentLevels.filter(a => trackedAllergens.includes(a.id));
   const otherAllergens = currentLevels.filter(a => !trackedAllergens.includes(a.id));
@@ -78,23 +93,98 @@ export const CurrentStatus: React.FC<CurrentStatusProps> = ({ data }) => {
   };
 
   return (
-    <div className="w-full">
-      <div className="mb-6">
-        <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2 mb-4">
-          <Leaf className="w-5 h-5 text-indigo-500" />
-          Sledované alergeny
-        </h3>
+    <div className="w-full space-y-6">
+      {/* Family Risk Overview Card when activeProfileId === 'all' */}
+      {activeProfileId === 'all' && (
+        <div className="bg-gradient-to-br from-indigo-900 to-indigo-800 text-white rounded-3xl p-6 shadow-xl relative overflow-hidden">
+          <div className="absolute top-0 right-0 p-8 opacity-10 pointer-events-none">
+            <ShieldAlert className="w-40 h-40" />
+          </div>
+
+          <div className="relative z-10">
+            <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
+              <span>👨‍👩‍👧‍👦</span>
+              <span>Dnešní přehled pro členy rodiny</span>
+            </h3>
+            <p className="text-xs text-indigo-200 mb-5">
+              Souhrnné hodnocení pylové zátěže podle osobních profilů
+            </p>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+              {familyRiskSummary.map(({ profile, highestRisk, highRiskAllergens }) => (
+                <div 
+                  key={profile.id}
+                  className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 flex flex-col justify-between"
+                >
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl bg-white/20 w-9 h-9 rounded-xl flex items-center justify-center">
+                        {profile.avatarEmoji}
+                      </span>
+                      <div>
+                        <h4 className="font-bold text-sm text-white">{profile.name}</h4>
+                        <p className="text-[11px] text-indigo-200">
+                          Sleduje {profile.trackedAllergens.length} pyly
+                        </p>
+                      </div>
+                    </div>
+
+                    {highestRisk >= 2 ? (
+                      <span className="px-2.5 py-1 bg-red-500/80 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <AlertTriangle className="w-3 h-3" /> Vysoké
+                      </span>
+                    ) : highestRisk === 1 ? (
+                      <span className="px-2.5 py-1 bg-amber-500/80 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <Info className="w-3 h-3" /> Střední
+                      </span>
+                    ) : (
+                      <span className="px-2.5 py-1 bg-emerald-500/80 text-white text-xs font-bold rounded-full flex items-center gap-1">
+                        <CheckCircle2 className="w-3 h-3" /> Nízké
+                      </span>
+                    )}
+                  </div>
+
+                  {highRiskAllergens.length > 0 ? (
+                    <div className="text-xs text-indigo-100 bg-black/20 p-2.5 rounded-xl border border-white/5">
+                      <span className="font-semibold text-white">Pozor na: </span>
+                      {highRiskAllergens.map(a => a.name).join(', ')}
+                    </div>
+                  ) : (
+                    <p className="text-xs text-emerald-200 italic">
+                      Žádné zvýšené pylové riziko pro dnešek.
+                    </p>
+                  )}
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Main Tracked Allergens List */}
+      <div>
+        <div className="mb-4 flex items-center justify-between">
+          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <Leaf className="w-5 h-5 text-indigo-500" />
+            <span>Sledované pyly</span>
+            {activeProfile && (
+              <span className="text-xs font-normal text-slate-500">({activeProfile.name})</span>
+            )}
+          </h3>
+        </div>
+
         {activeAllergens.length > 0 ? (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
             {activeAllergens.map(a => renderAllergenCard(a, true))}
           </div>
         ) : (
-          <p className="text-slate-500 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200">
-            Zatím nesledujete žádné alergeny. Vyberte si ze seznamu níže pro osobní varování.
+          <p className="text-slate-500 bg-slate-50 p-4 rounded-xl border border-dashed border-slate-200 text-sm">
+            Pro tento profil zatím nesledujete žádné pylové alergeny. Vyberte si je kliknutím z níže uvedených.
           </p>
         )}
       </div>
 
+      {/* Other Pollens */}
       <div>
         <h3 className="text-sm font-semibold text-slate-500 uppercase tracking-wider mb-3">
           Ostatní pyly v ovzduší

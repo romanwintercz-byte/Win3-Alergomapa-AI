@@ -20,15 +20,17 @@ const COMMON_SUGGESTIONS: Record<CustomAllergenCategory, string[]> = {
 };
 
 export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) => {
-  const { customAllergens, addCustomAllergen, removeCustomAllergen } = useAppContext();
+  const { profiles, activeProfileId, activeProfile, customAllergens, addCustomAllergen, removeCustomAllergen } = useAppContext();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<CustomAllergenCategory>('food');
+  const [selectedProfileId, setSelectedProfileId] = useState<string>(activeProfileId === 'all' ? (profiles[0]?.id || '') : activeProfileId);
   const [isAdding, setIsAdding] = useState(false);
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (name.trim()) {
-      addCustomAllergen({ name: name.trim(), category });
+      const targetId = activeProfileId === 'all' ? selectedProfileId : activeProfileId;
+      addCustomAllergen({ name: name.trim(), category }, targetId);
       setName('');
       setIsAdding(false);
     }
@@ -38,74 +40,134 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
     return ALLERGENS.filter(pollen => {
       const isCrossAllergen = pollen.crossAllergies.some(ca => ca.toLowerCase() === allergenName.toLowerCase());
       const level = getPollenLevel(data.current[pollen.apiField] as number || 0);
-      return isCrossAllergen && level.score >= 1; // Zvýšená koncentrace
+      return isCrossAllergen && level.score >= 1;
     });
   };
 
-  const sortedCustomAllergens = React.useMemo(() => {
-    return [...customAllergens].map(allergen => {
-      const activeCrossReactions = getCrossReactions(allergen.name);
-      return { ...allergen, activeCrossReactions };
-    }).sort((a, b) => b.activeCrossReactions.length - a.activeCrossReactions.length);
-  }, [customAllergens, data]);
+  // Build custom allergens list with owner info if activeProfileId === 'all'
+  const displayCustomAllergens = React.useMemo(() => {
+    if (activeProfileId === 'all') {
+      return profiles.flatMap(p => 
+        p.customAllergens.map(ca => ({
+          ...ca,
+          ownerName: p.name,
+          ownerEmoji: p.avatarEmoji,
+          ownerId: p.id,
+          activeCrossReactions: getCrossReactions(ca.name)
+        }))
+      ).sort((a, b) => b.activeCrossReactions.length - a.activeCrossReactions.length);
+    } else {
+      return customAllergens.map(ca => ({
+        ...ca,
+        ownerName: activeProfile?.name || 'Já',
+        ownerEmoji: activeProfile?.avatarEmoji || '👨',
+        ownerId: activeProfileId,
+        activeCrossReactions: getCrossReactions(ca.name)
+      })).sort((a, b) => b.activeCrossReactions.length - a.activeCrossReactions.length);
+    }
+  }, [profiles, activeProfileId, activeProfile, customAllergens, data]);
 
   return (
     <div className="w-full mt-8">
-      <div className="flex items-center justify-between mb-4">
-        <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
-          <UserCircle className="w-5 h-5 text-indigo-500" />
-          Osobní alergeny
-        </h3>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 mb-4">
+        <div>
+          <h3 className="text-lg font-semibold text-slate-800 flex items-center gap-2">
+            <UserCircle className="w-5 h-5 text-indigo-500" />
+            <span>Osobní alergeny</span>
+            {activeProfile ? (
+              <span className="text-xs px-2.5 py-1 bg-indigo-50 text-indigo-700 font-bold rounded-full flex items-center gap-1">
+                <span>{activeProfile.avatarEmoji}</span>
+                <span>{activeProfile.name}</span>
+              </span>
+            ) : (
+              <span className="text-xs px-2.5 py-1 bg-slate-100 text-slate-700 font-bold rounded-full">
+                👨‍👩‍👧‍👦 Rodina (všichni)
+              </span>
+            )}
+          </h3>
+          <p className="text-xs text-slate-500">Alergie na potraviny, zvířata, prach a jejich zkřížené reakce</p>
+        </div>
+
         {!isAdding && (
           <button 
-            onClick={() => setIsAdding(true)}
-            className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-full transition-colors"
+            onClick={() => {
+              setSelectedProfileId(activeProfileId === 'all' ? (profiles[0]?.id || '') : activeProfileId);
+              setIsAdding(true);
+            }}
+            className="flex items-center gap-1.5 text-sm font-medium text-indigo-600 bg-indigo-50 hover:bg-indigo-100 px-3.5 py-2 rounded-xl transition-colors self-start sm:self-auto"
           >
             <Plus className="w-4 h-4" />
-            Přidat vlastní
+            <span>Přidat alergen</span>
           </button>
         )}
       </div>
 
       {isAdding && (
-        <form onSubmit={handleSubmit} className="bg-white p-4 rounded-2xl border border-indigo-100 shadow-sm mb-4 animate-in fade-in slide-in-from-top-2">
-          <div className="flex flex-col sm:flex-row gap-3">
-            <input
-              type="text"
-              value={name}
-              onChange={(e) => setName(e.target.value)}
-              placeholder="Vlastní název alergenu..."
-              className="flex-1 px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-              autoFocus
-            />
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value as CustomAllergenCategory)}
-              className="px-4 py-2 bg-slate-50 border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-            >
-              {CATEGORIES.map(c => (
-                <option key={c.id} value={c.id}>{c.label}</option>
-              ))}
-            </select>
-            <div className="flex gap-2">
-              <button 
-                type="submit"
-                disabled={!name.trim()}
-                className="px-4 py-2 bg-indigo-600 text-white font-medium rounded-xl hover:bg-indigo-700 disabled:opacity-50 disabled:hover:bg-indigo-600 transition-colors"
+        <form onSubmit={handleSubmit} className="bg-white p-5 rounded-3xl border border-indigo-100 shadow-sm mb-6 animate-in fade-in slide-in-from-top-2">
+          <h4 className="text-xs font-bold text-slate-400 uppercase tracking-wider mb-3">
+            Přidání nového alergenu
+          </h4>
+          
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 mb-3">
+            {activeProfileId === 'all' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-600 mb-1">Pro člena:</label>
+                <select
+                  value={selectedProfileId}
+                  onChange={(e) => setSelectedProfileId(e.target.value)}
+                  className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                >
+                  {profiles.map(p => (
+                    <option key={p.id} value={p.id}>{p.avatarEmoji} {p.name}</option>
+                  ))}
+                </select>
+              </div>
+            )}
+
+            <div className={activeProfileId === 'all' ? 'sm:col-span-1' : 'sm:col-span-2'}>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Název alergenu:</label>
+              <input
+                type="text"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                placeholder="např. Ořechy, Kočka, Jablko..."
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                autoFocus
+              />
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Kategorie:</label>
+              <select
+                value={category}
+                onChange={(e) => setCategory(e.target.value as CustomAllergenCategory)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
               >
-                Uložit
-              </button>
-              <button 
-                type="button"
-                onClick={() => { setIsAdding(false); setName(''); }}
-                className="px-4 py-2 bg-slate-100 text-slate-600 font-medium rounded-xl hover:bg-slate-200 transition-colors"
-              >
-                Zavřít
-              </button>
+                {CATEGORIES.map(c => (
+                  <option key={c.id} value={c.id}>{c.label}</option>
+                ))}
+              </select>
             </div>
           </div>
+
+          <div className="flex justify-end gap-2 mb-4">
+            <button 
+              type="button"
+              onClick={() => { setIsAdding(false); setName(''); }}
+              className="px-4 py-2 bg-slate-100 text-slate-600 font-semibold rounded-xl text-xs hover:bg-slate-200 transition-colors"
+            >
+              Zrušit
+            </button>
+            <button 
+              type="submit"
+              disabled={!name.trim()}
+              className="px-5 py-2 bg-indigo-600 text-white font-bold rounded-xl text-xs hover:bg-indigo-700 disabled:opacity-50 transition-colors shadow-md shadow-indigo-200"
+            >
+              Uložit alergen
+            </button>
+          </div>
           
-          <div className="mt-4 pt-3 border-t border-slate-100">
+          <div className="pt-3 border-t border-slate-100">
             <p className="text-xs font-medium text-slate-500 mb-2">Rychlý výběr ({CATEGORIES.find(c => c.id === category)?.label}):</p>
             <div className="flex flex-wrap gap-2">
               {COMMON_SUGGESTIONS[category]
@@ -114,32 +176,32 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
                   <button
                     key={sug}
                     type="button"
-                    onClick={() => addCustomAllergen({ name: sug, category })}
+                    onClick={() => {
+                      const targetId = activeProfileId === 'all' ? selectedProfileId : activeProfileId;
+                      addCustomAllergen({ name: sug, category }, targetId);
+                    }}
                     className="text-xs px-3 py-1.5 bg-slate-50 border border-slate-200 text-slate-600 hover:bg-indigo-50 hover:text-indigo-600 hover:border-indigo-200 rounded-full transition-all flex items-center gap-1"
                   >
                     <Plus className="w-3 h-3" /> {sug}
                   </button>
                 ))}
-              {COMMON_SUGGESTIONS[category].filter(sug => !customAllergens.some(a => a.name.toLowerCase() === sug.toLowerCase())).length === 0 && (
-                <span className="text-xs text-slate-400">Všechny běžné alergeny z této kategorie již sledujete.</span>
-              )}
             </div>
           </div>
         </form>
       )}
 
-      {sortedCustomAllergens.length > 0 ? (
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
-          {sortedCustomAllergens.map(allergen => {
+      {displayCustomAllergens.length > 0 ? (
+        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3.5">
+          {displayCustomAllergens.map(allergen => {
             const catInfo = CATEGORIES.find(c => c.id === allergen.category);
             const activeCrossReactions = allergen.activeCrossReactions;
             
             return (
               <div 
-                key={allergen.id}
+                key={`${allergen.ownerId}_${allergen.id}`}
                 className={cn(
                   "bg-white p-4 rounded-2xl border shadow-sm flex flex-col gap-3 group relative transition-all",
-                  activeCrossReactions.length > 0 ? "border-red-200 bg-red-50/30" : "border-green-100 bg-green-50/30 hover:border-green-200"
+                  activeCrossReactions.length > 0 ? "border-red-200 bg-red-50/30" : "border-slate-200/80 hover:border-indigo-200"
                 )}
               >
                 <div className="flex items-center justify-between">
@@ -148,13 +210,21 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
                       {catInfo?.icon}
                     </div>
                     <div>
-                      <h4 className="font-semibold text-slate-800">{allergen.name}</h4>
+                      <div className="flex items-center gap-1.5">
+                        <h4 className="font-bold text-slate-800">{allergen.name}</h4>
+                        {activeProfileId === 'all' && (
+                          <span className="text-[11px] font-semibold px-2 py-0.5 bg-slate-100 text-slate-600 rounded-full flex items-center gap-1">
+                            <span>{allergen.ownerEmoji}</span>
+                            <span>{allergen.ownerName}</span>
+                          </span>
+                        )}
+                      </div>
                       <p className="text-xs text-slate-500">{catInfo?.label}</p>
                     </div>
                   </div>
                   <button
-                    onClick={() => removeCustomAllergen(allergen.id)}
-                    className="p-2 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100 absolute top-2 right-2"
+                    onClick={() => removeCustomAllergen(allergen.id, allergen.ownerId)}
+                    className="p-1.5 text-slate-300 hover:text-red-500 hover:bg-red-50 rounded-lg opacity-0 group-hover:opacity-100 transition-all focus:opacity-100 absolute top-3 right-3"
                     aria-label="Odstranit"
                   >
                     <Trash2 className="w-4 h-4" />
@@ -203,11 +273,11 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
           })}
         </div>
       ) : (
-        <div className="bg-slate-50 border border-dashed border-slate-200 rounded-2xl p-6 flex flex-col items-center justify-center text-center">
+        <div className="bg-slate-50 border border-dashed border-slate-200 rounded-3xl p-6 flex flex-col items-center justify-center text-center">
           <ShieldAlert className="w-8 h-8 text-slate-400 mb-2" />
-          <p className="text-slate-600 font-medium mb-1">Žádné osobní alergeny</p>
-          <p className="text-sm text-slate-500 max-w-sm">
-            Můžete si sem přidat potraviny, zvířata nebo roztoče, abyste měli všechny své alergie na jednom místě.
+          <p className="text-slate-600 font-bold mb-1">Žádné osobní alergeny</p>
+          <p className="text-xs text-slate-500 max-w-sm">
+            Přidejte potraviny nebo zvířata pro sledování zkřížených alergií.
           </p>
         </div>
       )}
