@@ -13,7 +13,18 @@ export default async function handler(req: any, res: any) {
   }
 
   try {
-    const ai = new GoogleGenAI({ apiKey });
+    // Forward the client's HTTP Referer to satisfy API key HTTP referrer restrictions
+    const clientReferer = req.headers?.referer || req.headers?.origin || process.env.APP_URL || 'http://localhost:3000/';
+
+    const ai = new GoogleGenAI({ 
+      apiKey,
+      httpOptions: {
+        headers: {
+          'Referer': clientReferer
+        }
+      }
+    });
+
     const { messages, context } = req.body || {};
     
     const systemInstruction = `Jsi asistent v aplikaci AlergoMapa, která radí rodičům a uživatelům ohledně alergií (pyly, potraviny, zvířata, roztoče) a sleduje kvalitu ovzduší.
