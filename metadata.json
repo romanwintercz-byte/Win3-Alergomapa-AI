@@ -1,0 +1,1 @@
+{"name":"Win3-AlergoMapa AI","description":"Osobní asistent pro sledování kvality ovzduší a pylové situace s varováním před zkříženými alergiemi.","requestFramePermissions":["geolocation"],"majorCapabilities":["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]}
