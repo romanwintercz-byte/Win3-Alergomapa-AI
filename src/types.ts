@@ -62,6 +62,7 @@ export interface Medication {
   id: string;
   name: string;
   type: 'pill' | 'spray' | 'drops' | 'other';
+  usageType?: 'regular' | 'as_needed';
   defaultDose?: string;
 }
 

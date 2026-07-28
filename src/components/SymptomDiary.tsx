@@ -28,6 +28,7 @@ export const SymptomDiary: React.FC = () => {
   const [showMedsManager, setShowMedsManager] = useState(false);
   const [newMedName, setNewMedName] = useState('');
   const [newMedType, setNewMedType] = useState<'pill' | 'spray' | 'drops' | 'other'>('pill');
+  const [newMedUsageType, setNewMedUsageType] = useState<'regular' | 'as_needed'>('regular');
 
   if (activeProfileId === 'all' || !activeProfile) {
     return (
@@ -61,7 +62,11 @@ export const SymptomDiary: React.FC = () => {
     } else {
       setLevel(0);
       setSymptoms([]);
-      setMedsTaken([]);
+      
+      // Auto-select regular medications for a new entry
+      const regularMeds = userMeds.filter(m => m.usageType === 'regular').map(m => m.id);
+      setMedsTaken(regularMeds);
+      
       setNote('');
     }
     setIsEditing(true);
@@ -101,11 +106,13 @@ export const SymptomDiary: React.FC = () => {
     const med: Medication = {
       id: Date.now().toString(),
       name: newMedName.trim(),
-      type: newMedType
+      type: newMedType,
+      usageType: newMedUsageType
     };
     updateProfile(activeProfile.id, { medications: [...userMeds, med] });
     setNewMedName('');
     setNewMedType('pill');
+    setNewMedUsageType('regular');
   };
 
   const removeMedication = (id: string) => {
@@ -234,21 +241,49 @@ export const SymptomDiary: React.FC = () => {
               </div>
               
               {userMeds.length > 0 ? (
-                <div className="flex flex-wrap gap-2">
-                  {userMeds.map(med => (
-                    <button
-                      key={med.id}
-                      onClick={() => toggleMed(med.id)}
-                      className={`px-3 py-1.5 rounded-xl text-sm border flex items-center gap-2 transition-colors ${
-                        medsTaken.includes(med.id)
-                          ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
-                          : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'
-                      }`}
-                    >
-                      <Pill className="w-3.5 h-3.5" />
-                      {med.name}
-                    </button>
-                  ))}
+                <div className="space-y-4">
+                  {userMeds.some(m => m.usageType === 'regular') && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Pravidelné léky</p>
+                      <div className="flex flex-wrap gap-2">
+                        {userMeds.filter(m => m.usageType === 'regular').map(med => (
+                          <button
+                            key={med.id}
+                            onClick={() => toggleMed(med.id)}
+                            className={`px-3 py-1.5 rounded-xl text-sm border flex items-center gap-2 transition-colors ${
+                              medsTaken.includes(med.id)
+                                ? 'bg-emerald-600 border-emerald-600 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-emerald-300'
+                            }`}
+                          >
+                            <Pill className="w-3.5 h-3.5" />
+                            {med.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
+                  {userMeds.some(m => m.usageType === 'as_needed' || !m.usageType) && (
+                    <div>
+                      <p className="text-xs font-bold text-slate-500 mb-2 uppercase tracking-wider">Při potížích</p>
+                      <div className="flex flex-wrap gap-2">
+                        {userMeds.filter(m => m.usageType === 'as_needed' || !m.usageType).map(med => (
+                          <button
+                            key={med.id}
+                            onClick={() => toggleMed(med.id)}
+                            className={`px-3 py-1.5 rounded-xl text-sm border flex items-center gap-2 transition-colors ${
+                              medsTaken.includes(med.id)
+                                ? 'bg-amber-500 border-amber-500 text-white shadow-sm'
+                                : 'bg-white border-slate-200 text-slate-600 hover:border-amber-300'
+                            }`}
+                          >
+                            <Pill className="w-3.5 h-3.5" />
+                            {med.name}
+                          </button>
+                        ))}
+                      </div>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="bg-slate-50 border border-dashed border-slate-300 rounded-xl p-4 text-center text-sm text-slate-500">
@@ -312,18 +347,46 @@ export const SymptomDiary: React.FC = () => {
               )}
 
               {existingEntry.medicationsTaken.length > 0 && (
-                <div className="mb-5">
+                <div className="mb-5 space-y-3">
                   <h4 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-2">Užité léky</h4>
-                  <div className="flex flex-wrap gap-2">
-                    {existingEntry.medicationsTaken.map(medId => {
-                      const med = userMeds.find(m => m.id === medId);
-                      return med ? (
-                        <span key={med.id} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-200 flex items-center gap-1.5">
-                          <Pill className="w-3.5 h-3.5" /> {med.name}
-                        </span>
-                      ) : null;
-                    })}
-                  </div>
+                  
+                  {(() => {
+                    const takenMeds = existingEntry.medicationsTaken
+                      .map(id => userMeds.find(m => m.id === id))
+                      .filter((m): m is Medication => m !== undefined);
+                    
+                    const regularMeds = takenMeds.filter(m => m.usageType === 'regular');
+                    const asNeededMeds = takenMeds.filter(m => m.usageType === 'as_needed' || !m.usageType);
+
+                    return (
+                      <>
+                        {regularMeds.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Pravidelné</p>
+                            <div className="flex flex-wrap gap-2">
+                              {regularMeds.map(med => (
+                                <span key={med.id} className="px-3 py-1 bg-emerald-50 text-emerald-700 rounded-full text-sm font-medium border border-emerald-200 flex items-center gap-1.5 shadow-sm">
+                                  <Pill className="w-3 h-3" /> {med.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        {asNeededMeds.length > 0 && (
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 mb-1.5 uppercase">Při potížích</p>
+                            <div className="flex flex-wrap gap-2">
+                              {asNeededMeds.map(med => (
+                                <span key={med.id} className="px-3 py-1 bg-amber-50 text-amber-700 rounded-full text-sm font-medium border border-amber-200 flex items-center gap-1.5 shadow-sm">
+                                  <Pill className="w-3 h-3" /> {med.name}
+                                </span>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                      </>
+                    );
+                  })()}
                 </div>
               )}
 
@@ -371,11 +434,16 @@ export const SymptomDiary: React.FC = () => {
                 {userMeds.length > 0 ? userMeds.map(med => (
                   <div key={med.id} className="flex justify-between items-center p-3 bg-slate-50 rounded-xl border border-slate-200">
                     <div className="flex items-center gap-3">
-                      <div className="w-8 h-8 bg-white rounded-lg flex items-center justify-center border border-slate-200 text-indigo-500 shadow-sm">
+                      <div className={`w-8 h-8 bg-white rounded-lg flex items-center justify-center border ${med.usageType === 'regular' ? 'border-emerald-200 text-emerald-500' : 'border-amber-200 text-amber-500'} shadow-sm`}>
                         <Pill className="w-4 h-4" />
                       </div>
                       <div>
-                        <p className="font-bold text-slate-700 text-sm">{med.name}</p>
+                        <p className="font-bold text-slate-700 text-sm flex items-center gap-2">
+                          {med.name}
+                          <span className={`text-[9px] px-1.5 py-0.5 rounded-md ${med.usageType === 'regular' ? 'bg-emerald-100 text-emerald-700' : 'bg-amber-100 text-amber-700'}`}>
+                            {med.usageType === 'regular' ? 'Pravidelně' : 'Při potížích'}
+                          </span>
+                        </p>
                         <p className="text-[10px] text-slate-400 uppercase tracking-wider">{med.type === 'pill' ? 'Prášek' : med.type === 'spray' ? 'Sprej' : med.type === 'drops' ? 'Kapky' : 'Jiné'}</p>
                       </div>
                     </div>
@@ -393,24 +461,41 @@ export const SymptomDiary: React.FC = () => {
 
               <div className="bg-indigo-50/50 p-4 rounded-2xl border border-indigo-100">
                 <h4 className="text-xs font-bold text-indigo-800 uppercase tracking-wider mb-3">Přidat nový lék</h4>
-                <div className="flex gap-2 mb-3">
-                  <input
-                    type="text"
-                    value={newMedName}
-                    onChange={e => setNewMedName(e.target.value)}
-                    placeholder="Název léku (např. Zodac)"
-                    className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  />
-                  <select 
-                    value={newMedType}
-                    onChange={e => setNewMedType(e.target.value as any)}
-                    className="px-2 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                  >
-                    <option value="pill">Prášek</option>
-                    <option value="spray">Sprej</option>
-                    <option value="drops">Kapky</option>
-                    <option value="other">Jiné</option>
-                  </select>
+                <div className="flex flex-col gap-3 mb-4">
+                  <div className="flex gap-2">
+                    <input
+                      type="text"
+                      value={newMedName}
+                      onChange={e => setNewMedName(e.target.value)}
+                      placeholder="Název léku (např. Zodac)"
+                      className="flex-1 px-3 py-2 text-sm border border-slate-200 rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    />
+                    <select 
+                      value={newMedType}
+                      onChange={e => setNewMedType(e.target.value as any)}
+                      className="w-[100px] px-2 py-2 text-sm border border-slate-200 rounded-xl bg-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    >
+                      <option value="pill">Prášek</option>
+                      <option value="spray">Sprej</option>
+                      <option value="drops">Kapky</option>
+                      <option value="other">Jiné</option>
+                    </select>
+                  </div>
+                  
+                  <div className="flex bg-white rounded-xl p-1 border border-slate-200">
+                    <button
+                      onClick={() => setNewMedUsageType('regular')}
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${newMedUsageType === 'regular' ? 'bg-emerald-50 text-emerald-700 shadow-sm border border-emerald-100' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Pravidelně
+                    </button>
+                    <button
+                      onClick={() => setNewMedUsageType('as_needed')}
+                      className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition-all ${newMedUsageType === 'as_needed' ? 'bg-amber-50 text-amber-700 shadow-sm border border-amber-100' : 'text-slate-500 hover:text-slate-700'}`}
+                    >
+                      Při potížích
+                    </button>
+                  </div>
                 </div>
                 <button
                   onClick={addMedication}
