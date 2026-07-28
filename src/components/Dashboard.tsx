@@ -4,6 +4,7 @@ import { fetchAirQuality } from '../api/openmeteo';
 import { AirQualityData } from '../types';
 import { LocationSearch } from './LocationSearch';
 import { ProfileSelector } from './ProfileSelector';
+import { MorningSummary } from "./MorningSummary.tsx";
 import { AqiWidget } from './AqiWidget';
 import { CurrentStatus } from './CurrentStatus';
 import { PollenChart } from './PollenChart';

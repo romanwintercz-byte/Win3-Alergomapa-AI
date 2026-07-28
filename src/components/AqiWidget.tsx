@@ -1,7 +1,7 @@
 import React, { useMemo } from 'react';
 import { AirQualityData } from '../types';
 import { getAqiStatus } from '../data/allergens';
-import { Wind, AlertTriangle, ShieldCheck } from 'lucide-react';
+import { Wind, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
 
 export const AqiWidget: React.FC<{ data: AirQualityData }> = ({ data }) => {
@@ -25,7 +25,7 @@ export const AqiWidget: React.FC<{ data: AirQualityData }> = ({ data }) => {
           </div>
           
           <div>
-            <h2 className="text-slate-500 text-sm font-medium mb-1">Index kvality ovzduší (AQI)</h2>
+            <h2 className="text-slate-500 text-sm font-medium mb-1">Kvalita ovzduší a Smog (AQI)</h2>
             <div className="flex items-baseline gap-3">
               <span className="text-4xl font-black text-slate-800">{currentAqi}</span>
               <span className={cn("text-lg font-bold", status.color)}>
@@ -35,15 +35,26 @@ export const AqiWidget: React.FC<{ data: AirQualityData }> = ({ data }) => {
           </div>
         </div>
 
-        <div className="bg-white/60 backdrop-blur px-5 py-4 rounded-2xl border border-slate-200/50 flex gap-3 max-w-md">
-          {currentAqi <= 40 ? (
-            <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
-          ) : (
-            <AlertTriangle className={cn("w-5 h-5 shrink-0 mt-0.5", status.color)} />
+        <div className="flex flex-col gap-2 max-w-md">
+          <div className="bg-white/60 backdrop-blur px-5 py-4 rounded-2xl border border-slate-200/50 flex gap-3">
+            {currentAqi <= 40 ? (
+              <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+            ) : (
+              <AlertTriangle className={cn("w-5 h-5 shrink-0 mt-0.5", status.color)} />
+            )}
+            <p className="text-sm text-slate-700 leading-relaxed">
+              {status.advice}
+            </p>
+          </div>
+          {currentAqi > 40 && (
+            <div className="bg-amber-50 px-5 py-3 rounded-2xl border border-amber-100 flex gap-3">
+               <Info className="w-4 h-4 text-amber-600 shrink-0 mt-0.5" />
+               <p className="text-xs text-amber-800 leading-relaxed">
+                 <strong className="font-semibold block mb-0.5">Zhoršený smog a pyl</strong>
+                 Prachové částice ze smogu se vážou na pylová zrna a rozbíjí je na menší kousky. Pylový alergen pak snadněji proniká hlouběji do plic, což <strong>zvyšuje riziko alergické reakce a astmatu i při nižší koncentraci pylu v ovzduší</strong>.
+               </p>
+            </div>
           )}
-          <p className="text-sm text-slate-700 leading-relaxed">
-            {status.advice}
-          </p>
         </div>
       </div>
     </div>

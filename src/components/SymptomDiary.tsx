@@ -3,7 +3,7 @@ import { useAppContext } from '../store';
 import { DiaryEntry, Medication } from '../types';
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
-import { AllergyReportModal } from "./AllergyReportModal";
+import { AllergyReportModal } from "./AllergyReportModal.tsx";
 import { Plus, Pill, Save, Calendar, Activity, X, ChevronLeft, ChevronRight, Stethoscope, Book } from 'lucide-react';
 
 const COMMON_SYMPTOMS = [
