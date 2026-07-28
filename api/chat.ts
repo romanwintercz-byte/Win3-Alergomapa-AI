@@ -1,26 +1,26 @@
 import { GoogleGenAI } from "@google/genai";
+import type { VercelRequest, VercelResponse } from '@vercel/node';
 
-export default async function handler(req: any, res: any) {
+export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method Not Allowed' });
+    return res.status(405).json({ error: 'Method not allowed' });
   }
 
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
     return res.status(400).json({ 
-      error: "Chybí platný GEMINI_API_KEY. Ujistěte se, že máte klíč v souboru .env nebo v Environment Variables na Vercelu." 
-    });
+       error: "Chybí platný GEMINI_API_KEY v souboru .env" 
+     });
   }
 
   try {
-    // Forward the client's HTTP Referer to satisfy API key HTTP referrer restrictions
     const clientReferer = req.headers?.referer || req.headers?.origin || process.env.APP_URL || 'http://localhost:3000/';
-
+    
     const ai = new GoogleGenAI({ 
-      apiKey,
+       apiKey,
       httpOptions: {
         headers: {
-          'Referer': clientReferer
+          'Referer': clientReferer as string
         }
       }
     });
@@ -33,8 +33,7 @@ V kontextu máš k dispozici informace o celém rodinném týmu (profily dětí/
 Když se rodič ptá na své děti (např. "co balit Adamovi", "je dnešek bezpečný pro Elišku"), zohledni přesně alergie daného dítěte a dej praktická doporučení.
 
 Tady jsou data z kontextu aplikace:
-${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}
-`;
+${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}`;
 
     const formattedMessages = (messages || []).map((msg: any) => ({
       role: msg.role === 'user' ? 'user' : 'model',
@@ -52,12 +51,13 @@ ${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}
           contents: formattedMessages,
           config: { systemInstruction }
         });
+        
         if (response && response.text) {
           replyText = response.text;
           break;
         }
       } catch (err: any) {
-        console.warn(`Model ${modelName} call failed:`, err.message);
+        console.warn(`Model ${modelName} failed:`, err.message);
         lastError = err;
       }
     }
@@ -66,9 +66,9 @@ ${context ? JSON.stringify(context, null, 2) : "Žádná data z kontextu"}
       throw lastError || new Error("Žádný AI model nevytvořil odpověď.");
     }
 
-    return res.status(200).json({ reply: replyText });
+    res.json({ reply: replyText });
   } catch (error: any) {
     console.error("Error calling Gemini API:", error);
-    return res.status(500).json({ error: error.message || "Nepodařilo se vygenerovat odpověď." });
+    res.status(500).json({ error: error.message || "Nepodařilo se vygenerovat odpověď." });
   }
 }
