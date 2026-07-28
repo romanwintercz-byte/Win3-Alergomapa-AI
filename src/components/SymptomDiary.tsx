@@ -3,6 +3,7 @@ import { useAppContext } from '../store';
 import { DiaryEntry, Medication } from '../types';
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
+import { AllergyReportModal } from "./AllergyReportModal";
 import { Plus, Pill, Save, Calendar, Activity, X, ChevronLeft, ChevronRight, Stethoscope, Book } from 'lucide-react';
 
 const COMMON_SYMPTOMS = [
@@ -25,6 +26,7 @@ export const SymptomDiary: React.FC = () => {
   const [note, setNote] = useState('');
   
   // Medications manager
+  const [showReportModal, setShowReportModal] = useState(false);
   const [showMedsManager, setShowMedsManager] = useState(false);
   const [newMedName, setNewMedName] = useState('');
   const [newMedType, setNewMedType] = useState<'pill' | 'spray' | 'drops' | 'other'>('pill');
@@ -154,23 +156,32 @@ export const SymptomDiary: React.FC = () => {
           </div>
         </div>
         
-        <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-full border border-slate-200">
+        <div className="flex flex-col sm:flex-row items-center gap-3">
           <button 
-            onClick={() => handleDateChange(-1)}
-            className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-slate-900"
+            onClick={() => setShowReportModal(true)}
+            className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-bold text-sm transition-colors border border-indigo-100"
           >
-            <ChevronLeft className="w-5 h-5" />
+            <Stethoscope className="w-4 h-4" /> Report pro lékaře
           </button>
-          <div className="px-4 py-1 font-semibold text-slate-700 min-w-[140px] text-center">
-            {isSameDay(selectedDate, new Date()) ? 'Dnes' : format(selectedDate, 'd. MMMM', { locale: cs })}
+          
+          <div className="flex items-center gap-2 bg-slate-50 p-1.5 rounded-full border border-slate-200">
+            <button 
+              onClick={() => handleDateChange(-1)}
+              className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-slate-900"
+            >
+              <ChevronLeft className="w-5 h-5" />
+            </button>
+            <div className="px-4 py-1 font-semibold text-slate-700 min-w-[140px] text-center">
+              {isSameDay(selectedDate, new Date()) ? 'Dnes' : format(selectedDate, 'd. MMMM', { locale: cs })}
+            </div>
+            <button 
+              onClick={() => handleDateChange(1)}
+              disabled={isSameDay(selectedDate, new Date())} // prevent future dates
+              className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent"
+            >
+              <ChevronRight className="w-5 h-5" />
+            </button>
           </div>
-          <button 
-            onClick={() => handleDateChange(1)}
-            disabled={isSameDay(selectedDate, new Date())} // prevent future dates
-            className="p-2 hover:bg-white rounded-full transition-colors text-slate-500 hover:text-slate-900 disabled:opacity-30 disabled:hover:bg-transparent"
-          >
-            <ChevronRight className="w-5 h-5" />
-          </button>
         </div>
       </div>
 
@@ -508,6 +519,10 @@ export const SymptomDiary: React.FC = () => {
             </div>
           </div>
         </div>
+      )}
+      
+      {showReportModal && (
+        <AllergyReportModal onClose={() => setShowReportModal(false)} />
       )}
     </div>
   );
