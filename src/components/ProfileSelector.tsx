@@ -135,7 +135,7 @@ export const ProfileSelector: React.FC = () => {
                   openEditModal(p);
                 }}
                 aria-label={`Upravit profil ${p.name}`}
-                className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white text-slate-500 p-1 rounded-full border border-slate-200 shadow-sm hover:text-indigo-600"
+                className="absolute -top-1 -right-1 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity bg-white text-slate-500 p-1 rounded-full border border-slate-200 shadow-sm hover:text-indigo-600"
               >
                 <Edit2 className="w-3 h-3" />
               </button>
