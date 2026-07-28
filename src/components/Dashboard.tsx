@@ -11,6 +11,7 @@ import { PersonalAllergens } from '../components/PersonalAllergens';
 import { ChatAssistant } from '../components/ChatAssistant';
 import { SymptomDiary } from '../components/SymptomDiary';
 import { SmartAlerts } from '../components/SmartAlerts';
+import { TripPlanner } from '../components/TripPlanner';
 import { CloudRain, Loader2, MapPin, Activity, Book } from 'lucide-react';
 
 type Tab = 'overview' | 'diary';
@@ -128,6 +129,7 @@ export const Dashboard: React.FC = () => {
                 <CurrentStatus data={data} />
                 <PersonalAllergens data={data} />
                 <PollenChart data={data} />
+                <TripPlanner data={data} />
               </div>
             ) : null}
           </>
