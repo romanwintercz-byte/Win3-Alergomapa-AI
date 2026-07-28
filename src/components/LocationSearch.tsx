@@ -52,15 +52,36 @@ export const LocationSearch: React.FC = () => {
         async (position) => {
           const lat = position.coords.latitude;
           const lon = position.coords.longitude;
-          // Reverse geocoding via Open-Meteo isn't perfectly supported by search endpoint directly without a query,
-          // but we can just use the coordinates directly for the API.
-          // For UX, we'll set a generic location name.
-          setCurrentLocation({
-            id: Date.now(),
-            name: "Aktuální poloha",
-            latitude: lat,
-            longitude: lon,
-          });
+          
+          try {
+            const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${lat}&lon=${lon}&zoom=14&accept-language=cs`);
+            if (res.ok) {
+              const data = await res.json();
+              const name = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || data.address?.suburb || data.address?.county || "Aktuální poloha";
+              const country = data.address?.country || "";
+              const admin1 = data.address?.state || "";
+              
+              setCurrentLocation({
+                id: Date.now(),
+                name,
+                latitude: lat,
+                longitude: lon,
+                country,
+                admin1
+              });
+            } else {
+              throw new Error("Reverse geocoding failed");
+            }
+          } catch (err) {
+            // Fallback pokud API selže
+            setCurrentLocation({
+              id: Date.now(),
+              name: "Aktuální poloha",
+              latitude: lat,
+              longitude: lon,
+            });
+          }
+          
           setIsLoading(false);
           setIsOpen(false);
         },

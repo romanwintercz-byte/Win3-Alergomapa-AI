@@ -132,10 +132,10 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
             const { latitude, longitude } = position.coords;
             try {
               // Pokus o získání názvu místa přes Nominatim (OpenStreetMap)
-              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=10&accept-language=cs`);
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&accept-language=cs`);
               if (res.ok) {
                 const data = await res.json();
-                const name = data.address?.city || data.address?.town || data.address?.village || data.address?.county || "Aktuální poloha";
+                const name = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || data.address?.suburb || data.address?.county || "Aktuální poloha";
                 const country = data.address?.country || "Neznámá";
                 const admin1 = data.address?.state || "";
                 
