@@ -9,13 +9,17 @@ import { CurrentStatus } from '../components/CurrentStatus';
 import { PollenChart } from '../components/PollenChart';
 import { PersonalAllergens } from '../components/PersonalAllergens';
 import { ChatAssistant } from '../components/ChatAssistant';
-import { CloudRain, Loader2, MapPin } from 'lucide-react';
+import { SymptomDiary } from '../components/SymptomDiary';
+import { CloudRain, Loader2, MapPin, Activity, Book } from 'lucide-react';
+
+type Tab = 'overview' | 'diary';
 
 export const Dashboard: React.FC = () => {
-  const { currentLocation } = useAppContext();
+  const { currentLocation, activeProfileId } = useAppContext();
   const [data, setData] = useState<AirQualityData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState<Tab>('overview');
 
   useEffect(() => {
     let isMounted = true;
@@ -75,25 +79,57 @@ export const Dashboard: React.FC = () => {
         {/* Profile Selector */}
         <ProfileSelector />
 
-        {loading ? (
-          <div className="flex flex-col items-center justify-center py-24 text-slate-400">
-            <Loader2 className="w-10 h-10 animate-spin text-indigo-500 mb-4" />
-            <p className="font-medium text-lg text-slate-600">Analyzuji kvalitu ovzduší...</p>
-            <p className="text-sm">Stahuji meteorologická a pylová data pro lokalitu</p>
-          </div>
-        ) : error ? (
-          <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 text-center">
-            <p className="font-medium">{error}</p>
-          </div>
-        ) : data ? (
-          <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-            <AqiWidget data={data} />
-            <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
-            <CurrentStatus data={data} />
-            <PersonalAllergens data={data} />
-            <PollenChart data={data} />
-          </div>
-        ) : null}
+        {/* Tabs */}
+        <div className="flex bg-slate-100 p-1 rounded-2xl mb-8 overflow-x-auto snap-x hide-scrollbar">
+          <button
+            onClick={() => setActiveTab('overview')}
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'overview'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Activity className="w-4 h-4" />
+            Přehled
+          </button>
+          <button
+            onClick={() => setActiveTab('diary')}
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+              activeTab === 'diary'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Book className="w-4 h-4" />
+            Deník
+          </button>
+        </div>
+
+        {activeTab === 'diary' ? (
+          <SymptomDiary />
+        ) : (
+          <>
+            {loading ? (
+              <div className="flex flex-col items-center justify-center py-24 text-slate-400">
+                <Loader2 className="w-10 h-10 animate-spin text-indigo-500 mb-4" />
+                <p className="font-medium text-lg text-slate-600">Analyzuji kvalitu ovzduší...</p>
+                <p className="text-sm">Stahuji meteorologická a pylová data pro lokalitu</p>
+              </div>
+            ) : error ? (
+              <div className="bg-red-50 text-red-600 p-6 rounded-3xl border border-red-100 text-center">
+                <p className="font-medium">{error}</p>
+              </div>
+            ) : data ? (
+              <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <AqiWidget data={data} />
+                <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
+                <CurrentStatus data={data} />
+                <PersonalAllergens data={data} />
+                <PollenChart data={data} />
+              </div>
+            ) : null}
+          </>
+        )}
       </main>
       
       <ChatAssistant data={data} />

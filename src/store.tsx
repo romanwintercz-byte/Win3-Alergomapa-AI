@@ -39,6 +39,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👨',
     trackedAllergens: ['birch', 'grass'],
     customAllergens: [],
+    diaryEntries: [],
+    medications: [],
     color: 'indigo'
   },
   {
@@ -47,6 +49,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👦',
     trackedAllergens: ['birch', 'ragweed'],
     customAllergens: [{ id: 'c1', name: 'Ořechy', category: 'food' }],
+    diaryEntries: [],
+    medications: [],
     color: 'emerald'
   },
   {
@@ -55,6 +59,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👧',
     trackedAllergens: ['grass', 'mugwort'],
     customAllergens: [{ id: 'c2', name: 'Kočky', category: 'animal' }],
+    diaryEntries: [],
+    medications: [],
     color: 'rose'
   }
 ];
