@@ -10,6 +10,7 @@ import { PollenChart } from '../components/PollenChart';
 import { PersonalAllergens } from '../components/PersonalAllergens';
 import { ChatAssistant } from '../components/ChatAssistant';
 import { SymptomDiary } from '../components/SymptomDiary';
+import { SmartAlerts } from '../components/SmartAlerts';
 import { CloudRain, Loader2, MapPin, Activity, Book } from 'lucide-react';
 
 type Tab = 'overview' | 'diary';
@@ -121,6 +122,7 @@ export const Dashboard: React.FC = () => {
               </div>
             ) : data ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
+                <SmartAlerts data={data} />
                 <AqiWidget data={data} />
                 <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
                 <CurrentStatus data={data} />
