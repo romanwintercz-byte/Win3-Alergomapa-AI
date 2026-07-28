@@ -30,7 +30,7 @@ export interface AirQualityData {
   };
 }
 
-export type AllergenKey = 'alder' | 'birch' | 'grass' | 'mugwort' | 'olive' | 'ragweed';
+export type AllergenKey = 'alder' | 'birch' | 'grass' | 'mugwort' | 'olive' | 'ragweed' | 'hazel' | 'ash' | 'timothy';
 
 export interface AllergenInfo {
   id: AllergenKey;
@@ -57,4 +57,3 @@ export interface UserProfile {
   customAllergens: CustomAllergen[];
   color?: string;
 }
-

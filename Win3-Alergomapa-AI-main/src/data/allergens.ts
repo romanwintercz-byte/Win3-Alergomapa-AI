@@ -49,6 +49,30 @@ export const ALLERGENS: AllergenInfo[] = [
     crossAllergies: ["Banán", "Meloun", "Okurka", "Cuketa", "Heřmánek"],
     description: "Pozdně letní agresivní plevel. Produkuje enormní množství pylu.",
   },
+  {
+    id: "hazel",
+    name: "Líska",
+    apiField: "alder_pollen",
+    color: "#d97706", // amber-600
+    crossAllergies: ["Jablko", "Broskev", "Třešeň", "Lískový ořech"],
+    description: "Spolu s olší první jarní alergen. Data v aplikaci jsou proxy odvozená z příbuzné olše/břízy.",
+  },
+  {
+    id: "ash",
+    name: "Jasan",
+    apiField: "olive_pollen",
+    color: "#475569", // slate-600
+    crossAllergies: ["Oliva", "Ptačí zob", "Šeřík", "Zlatice"],
+    description: "Patří do stejné čeledi jako oliva (olivovníkovité), data vychází ze společných modelů.",
+  },
+  {
+    id: "timothy",
+    name: "Bojínek",
+    apiField: "grass_pollen",
+    color: "#22c55e", // green-500
+    crossAllergies: ["Rajče", "Pšenice", "Žito", "Sója"],
+    description: "Významný zástupce trav (lipnicovité). Sledován společně v celkové kategorii trav.",
+  }
 ];
 
 export const KNOWN_CROSS_REACTIONS: Record<string, string[]> = {
