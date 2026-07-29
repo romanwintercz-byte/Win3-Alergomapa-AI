@@ -77,5 +77,6 @@ export interface UserProfile {
   customAllergens: CustomAllergen[];
   diaryEntries?: DiaryEntry[];
   medications?: Medication[];
+  bloodTestResults?: Record<string, number>;
   color?: string;
 }

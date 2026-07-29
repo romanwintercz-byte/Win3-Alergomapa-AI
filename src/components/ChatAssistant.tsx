@@ -107,7 +107,8 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
         familyProfiles: profiles.map(p => ({
           name: p.name,
           trackedPollen: p.trackedAllergens,
-          personalAllergens: p.customAllergens.map(ca => `${ca.name} (${ca.category})`)
+          personalAllergens: p.customAllergens.map(ca => `${ca.name} (${ca.category})`),
+          bloodTestResults: p.bloodTestResults
         })),
         currentAirQualityData: data?.current
       };

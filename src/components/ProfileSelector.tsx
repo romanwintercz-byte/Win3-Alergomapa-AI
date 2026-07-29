@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
 import { useAppContext } from '../store';
 import { UserProfile } from '../types';
-import { Plus, Users, Settings2, Trash2, X, Check, Edit2 } from 'lucide-react';
+import { Plus, Users, Settings2, Trash2, X, Check, Edit2, Activity } from 'lucide-react';
 import { cn } from '../lib/utils';
+import { ALLERGENS } from '../data/allergens';
 
 const EMOJI_OPTIONS = ['👨', '👩', '👦', '👧', '👶', '👵', '👴', '🧒', '🐶', '🐱'];
 const COLOR_OPTIONS = [
@@ -26,6 +27,7 @@ export const ProfileSelector: React.FC = () => {
   const [dateOfBirth, setDateOfBirth] = useState('');
   const [avatarEmoji, setAvatarEmoji] = useState('👦');
   const [color, setColor] = useState('indigo');
+  const [bloodTestResults, setBloodTestResults] = useState<Record<string, number>>({});
 
   const openAddModal = () => {
     setEditingProfile(null);
@@ -35,6 +37,7 @@ export const ProfileSelector: React.FC = () => {
     setDateOfBirth('');
     setAvatarEmoji('👦');
     setColor('emerald');
+    setBloodTestResults({});
     setIsModalOpen(true);
   };
 
@@ -46,6 +49,7 @@ export const ProfileSelector: React.FC = () => {
     setDateOfBirth(p.dateOfBirth || '');
     setAvatarEmoji(p.avatarEmoji);
     setColor(p.color || 'indigo');
+    setBloodTestResults(p.bloodTestResults || {});
     setIsModalOpen(true);
   };
 
@@ -60,6 +64,7 @@ export const ProfileSelector: React.FC = () => {
         address: address.trim(),
         dateOfBirth,
         avatarEmoji,
+        bloodTestResults,
         color
       });
     } else {
@@ -69,6 +74,7 @@ export const ProfileSelector: React.FC = () => {
         address: address.trim(),
         dateOfBirth,
         avatarEmoji,
+        bloodTestResults,
         color,
         trackedAllergens: ['birch', 'grass'],
         customAllergens: []
@@ -167,8 +173,8 @@ export const ProfileSelector: React.FC = () => {
       {/* Modal Dialog */}
       {isModalOpen && (
         <div className="fixed inset-0 z-50 bg-slate-900/40 backdrop-blur-sm flex items-center justify-center p-4">
-          <div className="bg-white rounded-3xl max-w-md w-full p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
-            <div className="flex items-center justify-between mb-5">
+          <div className="bg-white rounded-3xl max-w-md w-full max-h-[90vh] overflow-y-auto p-6 shadow-2xl border border-slate-100 animate-in fade-in zoom-in-95 duration-200">
+            <div className="flex items-center justify-between mb-5 sticky top-0 bg-white pb-2 z-10">
               <h3 className="font-bold text-slate-900 text-lg">
                 {editingProfile ? `Upravit profil: ${editingProfile.name}` : 'Přidat nového člena'}
               </h3>
@@ -260,6 +266,68 @@ export const ProfileSelector: React.FC = () => {
                   ))}
                 </div>
               </div>
+
+              {/* Blood Test Results */}
+              {editingProfile && (editingProfile.trackedAllergens.length > 0 || editingProfile.customAllergens.length > 0) && (
+                <div className="pt-4 border-t border-slate-100">
+                  <div className="flex items-center gap-2 mb-3">
+                    <Activity className="w-4 h-4 text-indigo-500" />
+                    <label className="block text-sm font-bold text-slate-800">
+                      Výsledky z krve (IgE třídy)
+                    </label>
+                  </div>
+                  <p className="text-xs text-slate-500 mb-4">
+                    Zadejte hodnotu (třídu 0-6), kterou vám naměřili na alergologii pro přesnější doporučení.
+                  </p>
+                  
+                  <div className="space-y-3">
+                    {editingProfile.trackedAllergens.map(allergenId => {
+                      const allergenInfo = ALLERGENS.find(a => a.id === allergenId);
+                      if (!allergenInfo) return null;
+                      return (
+                        <div key={allergenId} className="flex items-center justify-between gap-4">
+                          <span className="text-sm font-medium text-slate-700">{allergenInfo.name}</span>
+                          <input
+                            type="number"
+                            min="0"
+                            max="6"
+                            placeholder="0-6"
+                            value={bloodTestResults[allergenId] !== undefined ? bloodTestResults[allergenId] : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBloodTestResults(prev => ({
+                                ...prev,
+                                [allergenId]: val === '' ? undefined as any : Number(val)
+                              }));
+                            }}
+                            className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          />
+                        </div>
+                      );
+                    })}
+                    {editingProfile.customAllergens.map(customAllergen => (
+                      <div key={customAllergen.id} className="flex items-center justify-between gap-4">
+                        <span className="text-sm font-medium text-slate-700">{customAllergen.name}</span>
+                        <input
+                          type="number"
+                          min="0"
+                          max="6"
+                          placeholder="0-6"
+                          value={bloodTestResults[customAllergen.id] !== undefined ? bloodTestResults[customAllergen.id] : ''}
+                          onChange={(e) => {
+                            const val = e.target.value;
+                            setBloodTestResults(prev => ({
+                              ...prev,
+                              [customAllergen.id]: val === '' ? undefined as any : Number(val)
+                            }));
+                          }}
+                          className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                        />
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex items-center justify-between pt-2 border-t border-slate-100">
