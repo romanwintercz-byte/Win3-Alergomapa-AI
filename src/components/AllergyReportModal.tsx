@@ -5,7 +5,8 @@ import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, C
 import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
-import html2pdf from 'html2pdf.js';
+import { jsPDF } from 'jspdf';
+import html2canvas from 'html2canvas';
 
 interface AllergyReportModalProps {
   onClose: () => void;
@@ -150,15 +151,17 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
       if (!element) return;
       
       const fileName = `report_${activeProfile.name}_${format(currentMonth, 'yyyy-MM')}.pdf`;
-      const opt = {
-        margin:       0.5,
-        filename:     fileName,
-        image:        { type: 'jpeg', quality: 0.98 },
-        html2canvas:  { scale: 2, useCORS: true },
-        jsPDF:        { unit: 'in', format: 'letter', orientation: 'portrait' }
-      };
 
-      const pdfBlob = await html2pdf().from(element).set(opt).outputPdf('blob');
+      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
+      const imgData = canvas.toDataURL('image/jpeg', 0.98);
+      
+      const pdf = new jsPDF('p', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
+      
+      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
+      const pdfBlob = pdf.output('blob');
+      
       const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
       
       const shareData: ShareData = {
