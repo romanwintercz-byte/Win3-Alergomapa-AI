@@ -5,8 +5,6 @@ import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, C
 import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
-import { jsPDF } from 'jspdf';
-import html2canvas from 'html2canvas';
 
 interface AllergyReportModalProps {
   onClose: () => void;
@@ -138,62 +136,6 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     }
   };
 
-  const [isGeneratingPdf, setIsGeneratingPdf] = useState(false);
-
-  const handleSharePDF = async () => {
-    setIsGeneratingPdf(true);
-    
-    // Počkáme na překreslení Reactu (zobrazení PDF hlavičky)
-    await new Promise(resolve => setTimeout(resolve, 100));
-    
-    try {
-      const element = document.getElementById('pdf-content');
-      if (!element) return;
-      
-      const fileName = `report_${activeProfile.name}_${format(currentMonth, 'yyyy-MM')}.pdf`;
-
-      const canvas = await html2canvas(element, { scale: 2, useCORS: true });
-      const imgData = canvas.toDataURL('image/jpeg', 0.98);
-      
-      const pdf = new jsPDF('p', 'mm', 'a4');
-      const pdfWidth = pdf.internal.pageSize.getWidth();
-      const pdfHeight = (canvas.height * pdfWidth) / canvas.width;
-      
-      pdf.addImage(imgData, 'JPEG', 0, 0, pdfWidth, pdfHeight);
-      const pdfBlob = pdf.output('blob');
-      
-      const file = new File([pdfBlob], fileName, { type: 'application/pdf' });
-      
-      const shareData: ShareData = {
-        title: `Report pro alergologa - ${activeProfile.name}`,
-        text: `V příloze zasílám report alergika - ${activeProfile.name} za období ${format(currentMonth, 'LLLL yyyy', { locale: cs })}.`,
-      };
-
-      if (navigator.canShare && navigator.canShare({ files: [file] })) {
-         shareData.files = [file];
-      }
-
-      if (navigator.share) {
-        await navigator.share(shareData);
-      } else {
-        // Fallback k normálnímu stažení
-        const url = URL.createObjectURL(pdfBlob);
-        const link = document.createElement("a");
-        link.setAttribute("href", url);
-        link.setAttribute("download", fileName);
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-      }
-    } catch (error) {
-      if ((error as Error).name !== 'AbortError') {
-        console.error('Sdílení PDF selhalo', error);
-      }
-    } finally {
-      setIsGeneratingPdf(false);
-    }
-  };
-
   const handlePrint = () => {
     if (window.self !== window.top) {
       setShowPrintWarning(true);
@@ -240,15 +182,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               onClick={handlePrint}
             >
               <Printer className="w-4 h-4" />
-              Tisknout do PDF
-            </button>
-            <button 
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors border border-indigo-200 disabled:opacity-50"
-              onClick={handleSharePDF}
-              disabled={isGeneratingPdf}
-            >
-              <FileDown className="w-4 h-4" />
-              {isGeneratingPdf ? 'Generuji...' : 'Odeslat jako PDF'}
+              Stáhnout PDF / Tisknout
             </button>
             <button 
               className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors border border-indigo-200"
@@ -300,7 +234,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
 
         {/* Print-only header */}
         <div id="pdf-content" className="p-6 md:p-8 bg-white">
-          <div className={`${isGeneratingPdf ? 'block' : 'hidden print:block'} mb-6 border-b-2 border-black pb-4`}>
+          <div className={`hidden print:block mb-6 border-b-2 border-black pb-4`}>
             <h1 className="text-2xl font-bold mb-4">Výpis z deníku alergika</h1>
             <div className="grid grid-cols-2 gap-4 text-sm">
               <div>
@@ -343,13 +277,13 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
 
           <div className="mb-8 print:mb-4">
              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4 print:text-base print:mb-2">
-               <TrendingUp className={`w-5 h-5 text-indigo-500 ${isGeneratingPdf ? 'hidden' : 'print:hidden'}`} /> 
+               <TrendingUp className={`w-5 h-5 text-indigo-500 print:hidden`} /> 
                Křivka příznaků v měsíci
              </h3>
              <div className="h-32 flex items-end gap-1 w-full bg-slate-50 p-4 rounded-2xl border border-slate-100 print:p-1 print:border-slate-300 print:bg-transparent print:h-16">
                {reportData.map((d, i) => (
                  <div key={i} className="flex-1 flex flex-col items-center justify-end group relative h-full">
-                   <div className={`absolute bottom-full mb-2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-10 ${isGeneratingPdf ? 'hidden' : 'print:hidden'}`}>
+                   <div className={`absolute bottom-full mb-2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-10 print:hidden`}>
                      {format(d.date, 'd. MMM', { locale: cs })}: {d.hasEntry ? `Úroveň ${d.level}` : 'Bez záznamu'}
                    </div>
                    <div 
