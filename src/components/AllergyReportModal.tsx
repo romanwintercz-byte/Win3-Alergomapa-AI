@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../store';
-import { X, FileText, Download, TrendingUp, Printer, AlertCircle } from 'lucide-react';
-import { format, subDays, parseISO } from 'date-fns';
+import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
 
@@ -12,14 +12,16 @@ interface AllergyReportModalProps {
 export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose }) => {
   const { activeProfile } = useAppContext();
   const [showPrintWarning, setShowPrintWarning] = useState(false);
+  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
 
   const reportData = useMemo(() => {
     if (!activeProfile || !activeProfile.diaryEntries) return [];
 
-    const today = new Date();
-    const last30Days = Array.from({ length: 30 }).map((_, i) => subDays(today, 29 - i));
+    const start = startOfMonth(currentMonth);
+    const end = endOfMonth(currentMonth);
+    const daysInMonth = eachDayOfInterval({ start, end });
     
-    return last30Days.map(date => {
+    return daysInMonth.map(date => {
       const dateStr = format(date, 'yyyy-MM-dd');
       const entry = activeProfile.diaryEntries!.find(e => e.date === dateStr);
       
@@ -32,7 +34,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
         hasEntry: !!entry
       };
     });
-  }, [activeProfile]);
+  }, [activeProfile, currentMonth]);
 
   if (!activeProfile) return null;
 
@@ -69,7 +71,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
     link.setAttribute("href", url);
-    link.setAttribute("download", `report_${activeProfile.name}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    link.setAttribute("download", `report_${activeProfile.name}_${format(currentMonth, 'yyyy-MM')}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
@@ -93,6 +95,9 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     }
   };
 
+  const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
+  const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
+
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:block print:relative print:inset-auto">
       <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col print:shadow-none print:max-h-none print:overflow-visible print:rounded-none">
@@ -103,10 +108,21 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             </div>
             <div>
               <h2 className="text-xl font-bold text-slate-800">Report pro alergologa</h2>
-              <p className="text-sm text-slate-500">Pacient: {activeProfile.name} • Posledních 30 dní</p>
+              <p className="text-sm text-slate-500">Pacient: {activeProfile.name} • {format(currentMonth, 'LLLL yyyy', { locale: cs })}</p>
             </div>
           </div>
           <div className="flex flex-wrap items-center gap-2 print:hidden">
+            <div className="flex items-center bg-slate-100 rounded-xl mr-2">
+              <button onClick={handlePrevMonth} className="p-2 text-slate-600 hover:text-slate-900 transition-colors">
+                <ChevronLeft className="w-5 h-5" />
+              </button>
+              <span className="text-sm font-medium px-2 min-w-[100px] text-center capitalize">
+                {format(currentMonth, 'LLLL yyyy', { locale: cs })}
+              </span>
+              <button onClick={handleNextMonth} className="p-2 text-slate-600 hover:text-slate-900 transition-colors">
+                <ChevronRight className="w-5 h-5" />
+              </button>
+            </div>
             <button 
               className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl font-medium text-sm transition-colors shadow-sm"
               onClick={handlePrint}
@@ -148,71 +164,71 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
           </div>
         )}
 
-        <div className="p-6 md:p-8 flex-1">
+        <div className="p-6 md:p-8 flex-1 print:p-0 print:pt-4 print:text-xs">
           
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
-            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100">
-              <p className="text-sm text-slate-500 font-medium mb-1">Záznamy za 30 dní</p>
-              <p className="text-3xl font-black text-slate-800">{totalEntries}</p>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8 print:gap-4 print:mb-4">
+            <div className="bg-slate-50 rounded-2xl p-5 border border-slate-100 print:p-3 print:rounded-lg print:border-slate-300">
+              <p className="text-sm text-slate-500 font-medium mb-1 print:text-xs">Záznamy</p>
+              <p className="text-3xl font-black text-slate-800 print:text-xl">{totalEntries}</p>
             </div>
-            <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100">
-              <p className="text-sm text-rose-500 font-medium mb-1">Dny s horšími potížemi</p>
-              <p className="text-3xl font-black text-rose-700">{severeDays}</p>
+            <div className="bg-rose-50 rounded-2xl p-5 border border-rose-100 print:p-3 print:rounded-lg print:border-rose-200 print:bg-rose-50/50">
+              <p className="text-sm text-rose-500 font-medium mb-1 print:text-xs">Dny s horšími potížemi</p>
+              <p className="text-3xl font-black text-rose-700 print:text-xl">{severeDays}</p>
             </div>
-            <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100">
-              <p className="text-sm text-indigo-500 font-medium mb-1">Nejčastější symptom</p>
-              <p className="text-xl font-bold text-indigo-900 mt-2 line-clamp-1">
+            <div className="bg-indigo-50 rounded-2xl p-5 border border-indigo-100 print:p-3 print:rounded-lg print:border-indigo-200 print:bg-indigo-50/50">
+              <p className="text-sm text-indigo-500 font-medium mb-1 print:text-xs">Nejčastější symptom</p>
+              <p className="text-xl font-bold text-indigo-900 mt-2 line-clamp-1 print:text-lg print:mt-1">
                 {topSymptoms.length > 0 ? topSymptoms[0][0] : 'Žádná data'}
               </p>
             </div>
           </div>
 
-          <div className="mb-10">
-             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4">
-               <TrendingUp className="w-5 h-5 text-indigo-500" /> 
-               Křivka příznaků (30 dní)
+          <div className="mb-8 print:mb-4">
+             <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2 mb-4 print:text-base print:mb-2">
+               <TrendingUp className="w-5 h-5 text-indigo-500 print:hidden" /> 
+               Křivka příznaků v měsíci
              </h3>
-             <div className="h-40 flex items-end gap-1 w-full bg-slate-50 p-4 rounded-2xl border border-slate-100">
+             <div className="h-32 flex items-end gap-1 w-full bg-slate-50 p-4 rounded-2xl border border-slate-100 print:p-2 print:border-slate-300 print:bg-transparent print:h-24">
                {reportData.map((d, i) => (
-                 <div key={i} className="flex-1 flex flex-col items-center justify-end group relative">
-                   <div className="absolute bottom-full mb-2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-10">
+                 <div key={i} className="flex-1 flex flex-col items-center justify-end group relative h-full">
+                   <div className="absolute bottom-full mb-2 bg-slate-800 text-white text-xs px-2 py-1 rounded opacity-0 group-hover:opacity-100 pointer-events-none transition-opacity whitespace-nowrap z-10 print:hidden">
                      {format(d.date, 'd. MMM', { locale: cs })}: {d.hasEntry ? `Úroveň ${d.level}` : 'Bez záznamu'}
                    </div>
                    <div 
                      className={`w-full rounded-sm transition-all ${
-                       !d.hasEntry ? 'bg-transparent border border-dashed border-slate-200' :
-                       d.level === 0 ? 'bg-green-300' :
-                       d.level === 1 ? 'bg-yellow-400' :
-                       d.level === 2 ? 'bg-orange-500' :
-                       'bg-red-500'
+                       !d.hasEntry ? 'bg-transparent border border-dashed border-slate-200 print:border-slate-300' :
+                       d.level === 0 ? 'bg-green-300 print:bg-green-400' :
+                       d.level === 1 ? 'bg-yellow-400 print:bg-yellow-400' :
+                       d.level === 2 ? 'bg-orange-500 print:bg-orange-500' :
+                       'bg-red-500 print:bg-red-500'
                      }`}
                      style={{ height: d.hasEntry ? `${Math.max(10, d.level * 30)}%` : '10%' }}
                    ></div>
                  </div>
                ))}
              </div>
-             <div className="flex justify-between text-xs text-slate-400 mt-2 px-1">
+             <div className="flex justify-between text-xs text-slate-400 mt-2 px-1 print:text-[10px] print:text-slate-600">
                <span>{format(reportData[0].date, 'd. MMMM', { locale: cs })}</span>
-               <span>Dnes</span>
+               <span>{format(reportData[reportData.length - 1].date, 'd. MMMM', { locale: cs })}</span>
              </div>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-8 print:gap-4 print:mb-4">
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Nejčastější potíže</h3>
+              <h3 className="text-lg font-bold text-slate-800 mb-4 print:text-base print:mb-2">Nejčastější potíže</h3>
               {topSymptoms.length > 0 ? (
-                <div className="space-y-3">
+                <div className="space-y-3 print:space-y-1">
                   {topSymptoms.map(([symptom, count]) => (
                     <div key={symptom} className="flex items-center justify-between">
-                      <span className="text-slate-700">{symptom}</span>
-                      <div className="flex items-center gap-3">
-                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden">
+                      <span className="text-slate-700 print:text-[11px]">{symptom}</span>
+                      <div className="flex items-center gap-3 print:gap-2">
+                        <div className="w-32 h-2 bg-slate-100 rounded-full overflow-hidden print:w-20 print:border print:border-slate-300">
                           <div 
-                            className="h-full bg-indigo-400 rounded-full"
+                            className="h-full bg-indigo-400 rounded-full print:bg-slate-400 print:rounded-none"
                             style={{ width: `${(count / totalEntries) * 100}%` }}
                           ></div>
                         </div>
-                        <span className="text-sm font-bold text-slate-500 w-8 text-right">{count}x</span>
+                        <span className="text-sm font-bold text-slate-500 w-8 text-right print:text-[11px] print:w-6">{count}x</span>
                       </div>
                     </div>
                   ))}
@@ -223,13 +239,13 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             </div>
             
             <div>
-              <h3 className="text-lg font-bold text-slate-800 mb-4">Sledované alergeny</h3>
-              <div className="flex flex-wrap gap-2">
+              <h3 className="text-lg font-bold text-slate-800 mb-4 print:text-base print:mb-2">Sledované alergeny</h3>
+              <div className="flex flex-wrap gap-2 print:gap-1">
                 {activeProfile.trackedAllergens.length > 0 ? (
                   activeProfile.trackedAllergens.map(a => {
                     const allergen = ALLERGENS.find(al => al.id === a);
                     return (
-                      <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium print:border print:border-slate-300">
+                      <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium print:px-2 print:py-0.5 print:border print:border-slate-300 print:bg-transparent print:text-[11px]">
                         {allergen ? allergen.name : a}
                       </span>
                     );
@@ -238,7 +254,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
                   <span className="text-sm text-slate-500 italic">Profil nesleduje pyly.</span>
                 )}
                 {activeProfile.customAllergens && activeProfile.customAllergens.map(a => (
-                  <span key={a.id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-lg text-sm font-medium print:border-slate-300 print:text-slate-700">
+                  <span key={a.id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-lg text-sm font-medium print:px-2 print:py-0.5 print:border-slate-300 print:text-slate-700 print:bg-transparent print:text-[11px]">
                     {a.name}
                   </span>
                 ))}
@@ -246,24 +262,24 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             </div>
           </div>
 
-          <div className="mt-10">
-            <h3 className="text-lg font-bold text-slate-800 mb-4 print:mb-2">Detailní deník (posledních 30 dní)</h3>
+          <div className="mt-8 print:mt-2">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 print:text-base print:mb-2">Detailní deník ({format(currentMonth, 'LLLL', { locale: cs })})</h3>
             <div className="overflow-x-auto">
-              <table className="w-full text-left border-collapse text-sm">
+              <table className="w-full text-left border-collapse text-sm print:text-[10px]">
                 <thead>
-                  <tr className="border-b-2 border-slate-200">
-                    <th className="py-2 font-semibold text-slate-600">Datum</th>
-                    <th className="py-2 font-semibold text-slate-600">Úroveň</th>
-                    <th className="py-2 font-semibold text-slate-600">Příznaky</th>
-                    <th className="py-2 font-semibold text-slate-600">Léky</th>
+                  <tr className="border-b-2 border-slate-200 print:border-black">
+                    <th className="py-2 font-semibold text-slate-600 print:py-1 print:text-black">Datum</th>
+                    <th className="py-2 font-semibold text-slate-600 print:py-1 print:text-black">Úroveň</th>
+                    <th className="py-2 font-semibold text-slate-600 print:py-1 print:text-black">Příznaky</th>
+                    <th className="py-2 font-semibold text-slate-600 print:py-1 print:text-black">Léky</th>
                   </tr>
                 </thead>
                 <tbody>
                   {reportData.filter(d => d.hasEntry).map(d => (
                     <tr key={d.dateStr} className="border-b border-slate-100 print:border-slate-300">
-                      <td className="py-2 pr-4 whitespace-nowrap text-slate-800 font-medium">{format(d.date, 'd. M. yyyy')}</td>
-                      <td className="py-2 pr-4">
-                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold print:border print:border-slate-400 print:bg-transparent ${
+                      <td className="py-2 pr-4 whitespace-nowrap text-slate-800 font-medium print:py-1">{format(d.date, 'd. M. yyyy')}</td>
+                      <td className="py-2 pr-4 print:py-1">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold print:border print:border-slate-400 print:bg-transparent print:text-[10px] print:px-1 ${
                           d.level === 0 ? 'bg-green-100 text-green-700' :
                           d.level === 1 ? 'bg-yellow-100 text-yellow-700' :
                           d.level === 2 ? 'bg-orange-100 text-orange-700' :
@@ -272,8 +288,8 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
                           {d.level === 0 ? 'Žádné' : d.level === 1 ? 'Mírné' : d.level === 2 ? 'Střední' : 'Silné'}
                         </span>
                       </td>
-                      <td className="py-2 pr-4 text-slate-600">{d.symptoms.join(', ') || '-'}</td>
-                      <td className="py-2 text-slate-600">{d.meds.map(getMedicationName).join(', ') || '-'}</td>
+                      <td className="py-2 pr-4 text-slate-600 print:py-1">{d.symptoms.join(', ') || '-'}</td>
+                      <td className="py-2 text-slate-600 print:py-1">{d.meds.map(getMedicationName).join(', ') || '-'}</td>
                     </tr>
                   ))}
                 </tbody>
