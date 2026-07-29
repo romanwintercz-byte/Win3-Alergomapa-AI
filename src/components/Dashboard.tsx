@@ -51,7 +51,7 @@ export const Dashboard: React.FC = () => {
   }, [currentLocation]);
 
   return (
-    <div className="min-h-screen bg-slate-50 text-slate-900 pb-20 font-sans selection:bg-indigo-100">
+    <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 md:pb-12 font-sans selection:bg-indigo-100">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
         <div className="max-w-5xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between gap-4">
@@ -82,52 +82,54 @@ export const Dashboard: React.FC = () => {
         {/* Profile Selector */}
         <ProfileSelector />
 
-        {/* Tabs */}
-        <div className="flex bg-slate-100 p-1 rounded-2xl mb-8 overflow-x-auto snap-x hide-scrollbar">
-          <button
-            onClick={() => setActiveTab('overview')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
-              activeTab === 'overview'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Activity className="w-4 h-4" />
-            Přehled
-          </button>
-          <button
-            onClick={() => setActiveTab('allergens')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
-              activeTab === 'allergens'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Bug className="w-4 h-4" />
-            Alergeny
-          </button>
-          <button
-            onClick={() => setActiveTab('diary')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
-              activeTab === 'diary'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Book className="w-4 h-4" />
-            Deník
-          </button>
-          <button
-            onClick={() => setActiveTab('planner')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
-              activeTab === 'planner'
-                ? 'bg-white text-indigo-600 shadow-sm'
-                : 'text-slate-500 hover:text-slate-700'
-            }`}
-          >
-            <Map className="w-4 h-4" />
-            Výlety
-          </button>
+        {/* Tabs Navigation */}
+        <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] md:shadow-none md:sticky md:top-20 md:z-30 md:bg-slate-50/95 md:backdrop-blur-xl md:border-none pb-[env(safe-area-inset-bottom)] md:pb-0 mb-0 md:mb-8 md:pt-4 md:-mx-2 md:px-2 transition-all">
+          <div className="flex md:bg-slate-100 md:p-1 md:rounded-2xl overflow-x-auto hide-scrollbar gap-1 md:gap-0 justify-around md:justify-start">
+            <button
+              onClick={() => setActiveTab('overview')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'overview'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <Activity className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Přehled</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('allergens')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'allergens'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <Bug className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Alergeny</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('diary')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'diary'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <Book className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Deník</span>
+            </button>
+            <button
+              onClick={() => setActiveTab('planner')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'planner'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <Map className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Výlety</span>
+            </button>
+          </div>
         </div>
 
         {activeTab === 'diary' ? (
