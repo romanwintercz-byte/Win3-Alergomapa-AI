@@ -1,6 +1,6 @@
-import React, { useMemo } from 'react';
+import React, { useMemo, useState } from 'react';
 import { useAppContext } from '../store';
-import { X, FileText, Download, TrendingUp, Printer } from 'lucide-react';
+import { X, FileText, Download, TrendingUp, Printer, AlertCircle } from 'lucide-react';
 import { format, subDays, parseISO } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
@@ -11,6 +11,7 @@ interface AllergyReportModalProps {
 
 export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose }) => {
   const { activeProfile } = useAppContext();
+  const [showPrintWarning, setShowPrintWarning] = useState(false);
 
   const reportData = useMemo(() => {
     if (!activeProfile || !activeProfile.diaryEntries) return [];
@@ -56,7 +57,10 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     reportData.forEach(d => {
       if (d.hasEntry) {
         const symptoms = d.symptoms.join(" | ");
-        const meds = d.meds.join(" | ");
+        const meds = d.meds.map(medId => {
+          const med = activeProfile.medications?.find(m => m.id === medId);
+          return med ? med.name : medId;
+        }).join(" | ");
         csvContent += `${format(d.date, 'yyyy-MM-dd')},${d.level},"${symptoms}","${meds}"\n`;
       }
     });
@@ -71,10 +75,28 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     document.body.removeChild(link);
   };
 
+  const getMedicationName = (id: string) => {
+    const med = activeProfile.medications?.find(m => m.id === id);
+    return med ? med.name : id;
+  };
+
+  const handlePrint = () => {
+    if (window.self !== window.top) {
+      setShowPrintWarning(true);
+      try {
+        window.print();
+      } catch (e) {
+        console.warn("Print blocked by iframe sandbox.");
+      }
+    } else {
+      window.print();
+    }
+  };
+
   return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-3xl">
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:block print:relative print:inset-auto">
+      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col print:shadow-none print:max-h-none print:overflow-visible print:rounded-none">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-3xl print:static print:border-b-2 print:border-black print:pb-4">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-100 p-2.5 rounded-xl text-indigo-600">
               <FileText className="w-6 h-6" />
@@ -84,16 +106,16 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               <p className="text-sm text-slate-500">Pacient: {activeProfile.name} • Posledních 30 dní</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2 print:hidden">
             <button 
-              className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
-              onClick={() => window.print()}
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-600 text-white hover:bg-indigo-700 rounded-xl font-medium text-sm transition-colors shadow-sm"
+              onClick={handlePrint}
             >
               <Printer className="w-4 h-4" />
-              Tisknout
+              Tisknout do PDF
             </button>
             <button 
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors border border-indigo-100"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
               onClick={downloadCSV}
             >
               <Download className="w-4 h-4" />
@@ -107,6 +129,24 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             </button>
           </div>
         </div>
+
+        {showPrintWarning && (
+          <div className="mx-6 mt-6 p-4 bg-amber-50 border border-amber-200 rounded-2xl flex gap-3 text-amber-800 print:hidden animate-in fade-in slide-in-from-top-2">
+            <AlertCircle className="w-5 h-5 flex-shrink-0 text-amber-500 mt-0.5" />
+            <div className="text-sm">
+              <p className="font-bold mb-1">Tisk v náhledu může být blokován prohlížečem</p>
+              <p>
+                Pokud se neotevřelo okno pro tisk, z bezpečnostních důvodů prohlížeče je potřeba aplikaci otevřít v nové záložce (ikonka vpravo nahoře).
+              </p>
+            </div>
+            <button 
+              onClick={() => setShowPrintWarning(false)}
+              className="ml-auto p-1.5 hover:bg-amber-100 rounded-xl transition-colors h-fit"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <div className="p-6 md:p-8 flex-1">
           
@@ -189,7 +229,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
                   activeProfile.trackedAllergens.map(a => {
                     const allergen = ALLERGENS.find(al => al.id === a);
                     return (
-                      <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
+                      <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium print:border print:border-slate-300">
                         {allergen ? allergen.name : a}
                       </span>
                     );
@@ -198,11 +238,49 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
                   <span className="text-sm text-slate-500 italic">Profil nesleduje pyly.</span>
                 )}
                 {activeProfile.customAllergens && activeProfile.customAllergens.map(a => (
-                  <span key={a.id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-lg text-sm font-medium">
+                  <span key={a.id} className="px-3 py-1.5 bg-indigo-50 border border-indigo-100 text-indigo-700 rounded-lg text-sm font-medium print:border-slate-300 print:text-slate-700">
                     {a.name}
                   </span>
                 ))}
               </div>
+            </div>
+          </div>
+
+          <div className="mt-10">
+            <h3 className="text-lg font-bold text-slate-800 mb-4 print:mb-2">Detailní deník (posledních 30 dní)</h3>
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse text-sm">
+                <thead>
+                  <tr className="border-b-2 border-slate-200">
+                    <th className="py-2 font-semibold text-slate-600">Datum</th>
+                    <th className="py-2 font-semibold text-slate-600">Úroveň</th>
+                    <th className="py-2 font-semibold text-slate-600">Příznaky</th>
+                    <th className="py-2 font-semibold text-slate-600">Léky</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {reportData.filter(d => d.hasEntry).map(d => (
+                    <tr key={d.dateStr} className="border-b border-slate-100 print:border-slate-300">
+                      <td className="py-2 pr-4 whitespace-nowrap text-slate-800 font-medium">{format(d.date, 'd. M. yyyy')}</td>
+                      <td className="py-2 pr-4">
+                        <span className={`inline-block px-2 py-0.5 rounded text-xs font-bold print:border print:border-slate-400 print:bg-transparent ${
+                          d.level === 0 ? 'bg-green-100 text-green-700' :
+                          d.level === 1 ? 'bg-yellow-100 text-yellow-700' :
+                          d.level === 2 ? 'bg-orange-100 text-orange-700' :
+                          'bg-red-100 text-red-700'
+                        }`}>
+                          {d.level === 0 ? 'Žádné' : d.level === 1 ? 'Mírné' : d.level === 2 ? 'Střední' : 'Silné'}
+                        </span>
+                      </td>
+                      <td className="py-2 pr-4 text-slate-600">{d.symptoms.join(', ') || '-'}</td>
+                      <td className="py-2 text-slate-600">{d.meds.map(getMedicationName).join(', ') || '-'}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+              {reportData.filter(d => d.hasEntry).length === 0 && (
+                <p className="text-slate-500 italic py-4">Žádné záznamy k zobrazení.</p>
+              )}
             </div>
           </div>
 
