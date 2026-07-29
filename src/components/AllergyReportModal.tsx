@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../store';
-import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
+import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
 import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
@@ -54,20 +54,21 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
-  const downloadCSV = () => {
+  const getCsvContent = () => {
     let csvContent = "Datum,Uroven_Priznaku,Priznaky,Leky\n";
     
     reportData.forEach(d => {
       if (d.hasEntry) {
         const symptoms = d.symptoms.join(" | ");
-        const meds = d.meds.map(medId => {
-          const med = activeProfile.medications?.find(m => m.id === medId);
-          return med ? med.name : medId;
-        }).join(" | ");
+        const meds = d.meds.map(getMedicationName).join(" | ");
         csvContent += `${format(d.date, 'yyyy-MM-dd')},${d.level},"${symptoms}","${meds}"\n`;
       }
     });
+    return csvContent;
+  };
 
+  const downloadCSV = () => {
+    const csvContent = getCsvContent();
     const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
     const url = URL.createObjectURL(blob);
     const link = document.createElement("a");
@@ -81,6 +82,53 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
   const getMedicationName = (id: string) => {
     const med = activeProfile.medications?.find(m => m.id === id);
     return med ? med.name : id;
+  };
+
+  const handleShare = async () => {
+    const monthName = format(currentMonth, 'LLLL yyyy', { locale: cs });
+    let textContent = `Výpis z deníku alergika - ${activeProfile.name} (${monthName})\n\n`;
+    
+    const entries = reportData.filter(d => d.hasEntry);
+    if (entries.length === 0) {
+      textContent += 'V tomto období nejsou žádné záznamy.\n';
+    } else {
+      textContent += `Záznamy celkem: ${totalEntries}\n`;
+      textContent += `Dny s horšími potížemi: ${severeDays}\n`;
+      if (topSymptoms.length > 0) {
+        textContent += `Nejčastější symptom: ${topSymptoms[0][0]}\n`;
+      }
+      textContent += '\n--- Detailní deník ---\n';
+      entries.forEach(d => {
+        const levelStr = d.level === 0 ? 'Žádné' : d.level === 1 ? 'Mírné' : d.level === 2 ? 'Střední' : 'Silné';
+        const symptoms = d.symptoms.join(", ") || "žádné";
+        const meds = d.meds.map(getMedicationName).join(", ") || "žádné";
+        textContent += `${format(d.date, 'd. M. yyyy')}: Potíže: ${levelStr}, Příznaky: ${symptoms}, Léky: ${meds}\n`;
+      });
+    }
+
+    try {
+      const csvContent = getCsvContent();
+      const file = new File([csvContent], `report_${activeProfile.name}_${format(currentMonth, 'yyyy-MM')}.csv`, { type: 'text/csv' });
+      
+      const shareData: ShareData = {
+        title: `Report pro alergologa - ${activeProfile.name}`,
+        text: textContent,
+      };
+
+      if (navigator.canShare && navigator.canShare({ files: [file] })) {
+         shareData.files = [file];
+      }
+
+      if (navigator.share) {
+        await navigator.share(shareData);
+      } else {
+        alert('Sdílení přes systémové menu není na tomto zařízení plně podporováno (např. chybí HTTPS nebo Web Share API). Zkuste stáhnout CSV soubor.');
+      }
+    } catch (error) {
+      if ((error as Error).name !== 'AbortError') {
+        console.error('Sdílení selhalo', error);
+      }
+    }
   };
 
   const handlePrint = () => {
@@ -130,6 +178,13 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             >
               <Printer className="w-4 h-4" />
               Tisknout do PDF
+            </button>
+            <button 
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors border border-indigo-200"
+              onClick={handleShare}
+            >
+              <Share2 className="w-4 h-4" />
+              Sdílet
             </button>
             <button 
               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
