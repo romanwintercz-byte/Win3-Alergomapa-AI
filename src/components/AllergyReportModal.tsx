@@ -1,4 +1,5 @@
 import React, { useMemo, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useAppContext } from '../store';
 import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight } from 'lucide-react';
 import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
@@ -98,8 +99,8 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
   const handlePrevMonth = () => setCurrentMonth(prev => subMonths(prev, 1));
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
-  return (
-    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:block print:relative print:inset-auto">
+  const modalContent = (
+    <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:static print:bg-white print:p-0 print:block">
       <div id="printable-report" className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col print:shadow-none print:max-h-none print:overflow-visible print:rounded-none">
         <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-3xl print:hidden">
           <div className="flex items-center gap-3">
@@ -327,4 +328,6 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
       </div>
     </div>
   );
+
+  return createPortal(modalContent, document.body);
 };
