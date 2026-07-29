@@ -3,7 +3,7 @@ import { useAppContext } from '../store';
 import { CustomAllergenCategory, AirQualityData } from '../types';
 import { UserCircle, Bug, Cat, Apple, Sparkles, Plus, Trash2, ShieldAlert, AlertTriangle, ShieldCheck, Info } from 'lucide-react';
 import { cn } from '../lib/utils';
-import { ALLERGENS, getPollenLevel, KNOWN_CROSS_REACTIONS } from '../data/allergens';
+import { ALLERGENS, getPollenLevel, KNOWN_CROSS_REACTIONS, EU_FOOD_ALLERGENS } from '../data/allergens';
 
 const CATEGORIES: { id: CustomAllergenCategory; label: string; icon: React.ReactNode; color: string }[] = [
   { id: 'food', label: 'Potraviny', icon: <Apple className="w-5 h-5" />, color: 'text-orange-500 bg-orange-100' },
@@ -13,7 +13,7 @@ const CATEGORIES: { id: CustomAllergenCategory; label: string; icon: React.React
 ];
 
 const COMMON_SUGGESTIONS: Record<CustomAllergenCategory, string[]> = {
-  food: ['Arašídy', 'Lískové ořechy', 'Vlašské ořechy', 'Mléko', 'Vejce', 'Sója', 'Pšenice', 'Ryby', 'Korýši', 'Jablko', 'Celer', 'Rajče', 'Broskev'],
+  food: [...EU_FOOD_ALLERGENS, 'Pšenice', 'Lískové ořechy', 'Vlašské ořechy', 'Jablko', 'Rajče', 'Broskev'],
   animal: ['Kočka', 'Pes', 'Kůň', 'Králík', 'Morče', 'Peří (Ptáci)'],
   mite: ['Roztoč prachový', 'Roztoč domácí', 'Plísně', 'Švábi'],
   other: ['Včelí jed', 'Vosí jed', 'Latex', 'Penicilin']
