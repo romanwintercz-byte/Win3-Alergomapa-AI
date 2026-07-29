@@ -1,7 +1,7 @@
 import React, { useMemo, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { useAppContext } from '../store';
-import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight, Share2 } from 'lucide-react';
+import { X, FileText, Download, TrendingUp, Printer, AlertCircle, ChevronLeft, ChevronRight, Share2, Mail } from 'lucide-react';
 import { format, subDays, parseISO, startOfMonth, endOfMonth, eachDayOfInterval, addMonths, subMonths } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { ALLERGENS } from '../data/allergens';
@@ -84,7 +84,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     return med ? med.name : id;
   };
 
-  const handleShare = async () => {
+  const getShareText = () => {
     const monthName = format(currentMonth, 'LLLL yyyy', { locale: cs });
     let textContent = `Výpis z deníku alergika - ${activeProfile.name} (${monthName})\n\n`;
     
@@ -105,6 +105,11 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
         textContent += `${format(d.date, 'd. M. yyyy')}: Potíže: ${levelStr}, Příznaky: ${symptoms}, Léky: ${meds}\n`;
       });
     }
+    return textContent;
+  };
+
+  const handleShare = async () => {
+    const textContent = getShareText();
 
     try {
       const csvContent = getCsvContent();
@@ -122,7 +127,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
       if (navigator.share) {
         await navigator.share(shareData);
       } else {
-        alert('Sdílení přes systémové menu není na tomto zařízení plně podporováno (např. chybí HTTPS nebo Web Share API). Zkuste stáhnout CSV soubor.');
+        alert('Sdílení přes systémové menu není na tomto zařízení plně podporováno (např. chybí HTTPS nebo Web Share API). Zkuste stáhnout CSV soubor nebo poslat E-mailem.');
       }
     } catch (error) {
       if ((error as Error).name !== 'AbortError') {
@@ -186,6 +191,13 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               <Share2 className="w-4 h-4" />
               Sdílet
             </button>
+            <a
+              href={`mailto:?subject=${encodeURIComponent(`Report pro alergologa - ${activeProfile.name}`)}&body=${encodeURIComponent(getShareText())}`}
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
+            >
+              <Mail className="w-4 h-4" />
+              E-mail
+            </a>
             <button 
               className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
               onClick={downloadCSV}
