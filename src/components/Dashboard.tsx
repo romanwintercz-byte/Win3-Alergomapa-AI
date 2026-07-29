@@ -24,6 +24,11 @@ export const Dashboard: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
 
+  const handleTabChange = (tab: Tab) => {
+    setActiveTab(tab);
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   useEffect(() => {
     let isMounted = true;
     
@@ -86,7 +91,7 @@ export const Dashboard: React.FC = () => {
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] md:shadow-none md:sticky md:top-20 md:z-30 md:bg-slate-50/95 md:backdrop-blur-xl md:border-none pb-[env(safe-area-inset-bottom)] md:pb-0 mb-0 md:mb-8 md:pt-4 md:-mx-2 md:px-2 transition-all">
           <div className="flex md:bg-slate-100 md:p-1 md:rounded-2xl overflow-x-auto hide-scrollbar gap-1 md:gap-0 justify-around md:justify-start">
             <button
-              onClick={() => setActiveTab('overview')}
+              onClick={() => handleTabChange('overview')}
               className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
                 activeTab === 'overview'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
@@ -97,7 +102,7 @@ export const Dashboard: React.FC = () => {
               <span>Přehled</span>
             </button>
             <button
-              onClick={() => setActiveTab('allergens')}
+              onClick={() => handleTabChange('allergens')}
               className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
                 activeTab === 'allergens'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
@@ -108,7 +113,7 @@ export const Dashboard: React.FC = () => {
               <span>Alergeny</span>
             </button>
             <button
-              onClick={() => setActiveTab('diary')}
+              onClick={() => handleTabChange('diary')}
               className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
                 activeTab === 'diary'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
@@ -119,7 +124,7 @@ export const Dashboard: React.FC = () => {
               <span>Deník</span>
             </button>
             <button
-              onClick={() => setActiveTab('planner')}
+              onClick={() => handleTabChange('planner')}
               className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
                 activeTab === 'planner'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
