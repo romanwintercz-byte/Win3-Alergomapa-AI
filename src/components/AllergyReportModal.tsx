@@ -1,8 +1,9 @@
 import React, { useMemo } from 'react';
 import { useAppContext } from '../store';
-import { X, FileText, Download, TrendingUp } from 'lucide-react';
+import { X, FileText, Download, TrendingUp, Printer } from 'lucide-react';
 import { format, subDays, parseISO } from 'date-fns';
 import { cs } from 'date-fns/locale';
+import { ALLERGENS } from '../data/allergens';
 
 interface AllergyReportModalProps {
   onClose: () => void;
@@ -49,6 +50,27 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
     .sort((a, b) => b[1] - a[1])
     .slice(0, 5);
 
+  const downloadCSV = () => {
+    let csvContent = "Datum,Uroven_Priznaku,Priznaky,Leky\n";
+    
+    reportData.forEach(d => {
+      if (d.hasEntry) {
+        const symptoms = d.symptoms.join(" | ");
+        const meds = d.meds.join(" | ");
+        csvContent += `${format(d.date, 'yyyy-MM-dd')},${d.level},"${symptoms}","${meds}"\n`;
+      }
+    });
+
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement("a");
+    link.setAttribute("href", url);
+    link.setAttribute("download", `report_${activeProfile.name}_${format(new Date(), 'yyyy-MM-dd')}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+  };
+
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4">
       <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col">
@@ -62,17 +84,24 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               <p className="text-sm text-slate-500">Pacient: {activeProfile.name} • Posledních 30 dní</p>
             </div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-wrap items-center gap-2">
             <button 
-              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-slate-50 text-slate-700 hover:bg-slate-100 rounded-xl font-medium text-sm transition-colors border border-slate-200"
               onClick={() => window.print()}
             >
+              <Printer className="w-4 h-4" />
+              Tisknout
+            </button>
+            <button 
+              className="flex items-center gap-2 px-4 py-2 bg-indigo-50 text-indigo-700 hover:bg-indigo-100 rounded-xl font-medium text-sm transition-colors border border-indigo-100"
+              onClick={downloadCSV}
+            >
               <Download className="w-4 h-4" />
-              Uložit PDF / Tisknout
+              Stáhnout CSV
             </button>
             <button 
               onClick={onClose}
-              className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors"
+              className="p-2 text-slate-400 hover:bg-slate-100 rounded-xl transition-colors ml-2"
             >
               <X className="w-6 h-6" />
             </button>
@@ -157,11 +186,14 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               <h3 className="text-lg font-bold text-slate-800 mb-4">Sledované alergeny</h3>
               <div className="flex flex-wrap gap-2">
                 {activeProfile.trackedAllergens.length > 0 ? (
-                  activeProfile.trackedAllergens.map(a => (
-                    <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
-                      {a}
-                    </span>
-                  ))
+                  activeProfile.trackedAllergens.map(a => {
+                    const allergen = ALLERGENS.find(al => al.id === a);
+                    return (
+                      <span key={a} className="px-3 py-1.5 bg-slate-100 text-slate-700 rounded-lg text-sm font-medium">
+                        {allergen ? allergen.name : a}
+                      </span>
+                    );
+                  })
                 ) : (
                   <span className="text-sm text-slate-500 italic">Profil nesleduje pyly.</span>
                 )}
