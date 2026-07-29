@@ -69,6 +69,9 @@ export interface Medication {
 export interface UserProfile {
   id: string;
   name: string;
+  lastName?: string;
+  address?: string;
+  dateOfBirth?: string;
   avatarEmoji: string;
   trackedAllergens: AllergenKey[];
   customAllergens: CustomAllergen[];

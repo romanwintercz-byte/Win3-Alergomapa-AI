@@ -100,8 +100,8 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
 
   return (
     <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-center p-4 print:p-0 print:bg-white print:block print:relative print:inset-auto">
-      <div className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col print:shadow-none print:max-h-none print:overflow-visible print:rounded-none">
-        <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-3xl print:static print:border-b-2 print:border-black print:pb-4">
+      <div id="printable-report" className="bg-white rounded-3xl w-full max-w-4xl max-h-[90vh] overflow-y-auto shadow-2xl flex flex-col print:shadow-none print:max-h-none print:overflow-visible print:rounded-none">
+        <div className="p-6 border-b border-slate-100 flex items-center justify-between sticky top-0 bg-white z-10 rounded-t-3xl print:hidden">
           <div className="flex items-center gap-3">
             <div className="bg-indigo-100 p-2.5 rounded-xl text-indigo-600">
               <FileText className="w-6 h-6" />
@@ -111,7 +111,7 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
               <p className="text-sm text-slate-500">Pacient: {activeProfile.name} • {format(currentMonth, 'LLLL yyyy', { locale: cs })}</p>
             </div>
           </div>
-          <div className="flex flex-wrap items-center gap-2 print:hidden">
+          <div className="flex flex-wrap items-center gap-2">
             <div className="flex items-center bg-slate-100 rounded-xl mr-2">
               <button onClick={handlePrevMonth} className="p-2 text-slate-600 hover:text-slate-900 transition-colors">
                 <ChevronLeft className="w-5 h-5" />
@@ -143,6 +143,29 @@ export const AllergyReportModal: React.FC<AllergyReportModalProps> = ({ onClose 
             >
               <X className="w-6 h-6" />
             </button>
+          </div>
+        </div>
+
+        {/* Print-only header */}
+        <div className="hidden print:block mb-6 border-b-2 border-black pb-4">
+          <h1 className="text-2xl font-bold mb-4">Výpis z deníku alergika</h1>
+          <div className="grid grid-cols-2 gap-4 text-sm">
+            <div>
+              <span className="font-semibold mr-2">Jméno a příjmení:</span>
+              {activeProfile.name} {activeProfile.lastName || ''}
+            </div>
+            <div>
+              <span className="font-semibold mr-2">Datum narození:</span>
+              {activeProfile.dateOfBirth ? format(parseISO(activeProfile.dateOfBirth), 'd. M. yyyy') : '____________________'}
+            </div>
+            <div className="col-span-2">
+              <span className="font-semibold mr-2">Adresa:</span>
+              {activeProfile.address || '________________________________________'}
+            </div>
+            <div className="col-span-2 mt-2">
+              <span className="font-semibold mr-2">Sledované období:</span>
+              <span className="capitalize">{format(currentMonth, 'LLLL yyyy', { locale: cs })}</span>
+            </div>
           </div>
         </div>
 

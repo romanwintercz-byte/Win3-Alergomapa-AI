@@ -21,12 +21,18 @@ export const ProfileSelector: React.FC = () => {
   
   // Form state
   const [name, setName] = useState('');
+  const [lastName, setLastName] = useState('');
+  const [address, setAddress] = useState('');
+  const [dateOfBirth, setDateOfBirth] = useState('');
   const [avatarEmoji, setAvatarEmoji] = useState('👦');
   const [color, setColor] = useState('indigo');
 
   const openAddModal = () => {
     setEditingProfile(null);
     setName('');
+    setLastName('');
+    setAddress('');
+    setDateOfBirth('');
     setAvatarEmoji('👦');
     setColor('emerald');
     setIsModalOpen(true);
@@ -35,6 +41,9 @@ export const ProfileSelector: React.FC = () => {
   const openEditModal = (p: UserProfile) => {
     setEditingProfile(p);
     setName(p.name);
+    setLastName(p.lastName || '');
+    setAddress(p.address || '');
+    setDateOfBirth(p.dateOfBirth || '');
     setAvatarEmoji(p.avatarEmoji);
     setColor(p.color || 'indigo');
     setIsModalOpen(true);
@@ -47,12 +56,18 @@ export const ProfileSelector: React.FC = () => {
     if (editingProfile) {
       updateProfile(editingProfile.id, {
         name: name.trim(),
+        lastName: lastName.trim(),
+        address: address.trim(),
+        dateOfBirth,
         avatarEmoji,
         color
       });
     } else {
       addProfile({
         name: name.trim(),
+        lastName: lastName.trim(),
+        address: address.trim(),
+        dateOfBirth,
         avatarEmoji,
         color,
         trackedAllergens: ['birch', 'grass'],
@@ -160,20 +175,61 @@ export const ProfileSelector: React.FC = () => {
               </button>
             </div>
 
-            <form onSubmit={handleSave} className="space-y-5">
+            <form onSubmit={handleSave} className="space-y-4">
               {/* Name Input */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-600 mb-1.5">
-                  Jméno / Přezdívka
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="např. Adam, Eliška, Babička..."
-                  value={name}
-                  onChange={(e) => setName(e.target.value)}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                />
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Křestní jméno
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    placeholder="např. Adam"
+                    value={name}
+                    onChange={(e) => setName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Příjmení
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="např. Novák"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+              </div>
+
+              {/* Additional Info */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Datum narození
+                  </label>
+                  <input
+                    type="date"
+                    value={dateOfBirth}
+                    onChange={(e) => setDateOfBirth(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-semibold text-slate-600 mb-1.5">
+                    Adresa
+                  </label>
+                  <input
+                    type="text"
+                    placeholder="Ulice, Město..."
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    className="w-full bg-slate-50 border border-slate-200 rounded-xl px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                  />
+                </div>
               </div>
 
               {/* Avatar Selection */}
