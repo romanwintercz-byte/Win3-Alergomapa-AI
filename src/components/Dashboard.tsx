@@ -13,9 +13,9 @@ import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
 import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
-import { CloudRain, Loader2, MapPin, Activity, Book } from 'lucide-react';
+import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map } from 'lucide-react';
 
-type Tab = 'overview' | 'diary';
+type Tab = 'overview' | 'allergens' | 'diary' | 'planner';
 
 export const Dashboard: React.FC = () => {
   const { currentLocation, activeProfileId } = useAppContext();
@@ -86,7 +86,7 @@ export const Dashboard: React.FC = () => {
         <div className="flex bg-slate-100 p-1 rounded-2xl mb-8 overflow-x-auto snap-x hide-scrollbar">
           <button
             onClick={() => setActiveTab('overview')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
               activeTab === 'overview'
                 ? 'bg-white text-indigo-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
@@ -96,8 +96,19 @@ export const Dashboard: React.FC = () => {
             Přehled
           </button>
           <button
+            onClick={() => setActiveTab('allergens')}
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
+              activeTab === 'allergens'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Bug className="w-4 h-4" />
+            Alergeny
+          </button>
+          <button
             onClick={() => setActiveTab('diary')}
-            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all ${
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
               activeTab === 'diary'
                 ? 'bg-white text-indigo-600 shadow-sm'
                 : 'text-slate-500 hover:text-slate-700'
@@ -105,6 +116,17 @@ export const Dashboard: React.FC = () => {
           >
             <Book className="w-4 h-4" />
             Deník
+          </button>
+          <button
+            onClick={() => setActiveTab('planner')}
+            className={`flex-1 snap-center flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-sm font-bold transition-all min-w-[120px] ${
+              activeTab === 'planner'
+                ? 'bg-white text-indigo-600 shadow-sm'
+                : 'text-slate-500 hover:text-slate-700'
+            }`}
+          >
+            <Map className="w-4 h-4" />
+            Výlety
           </button>
         </div>
 
@@ -124,13 +146,23 @@ export const Dashboard: React.FC = () => {
               </div>
             ) : data ? (
               <div className="space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-700">
-                <SmartAlerts data={data} />
-                <AqiWidget data={data} />
-                <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
-                <CurrentStatus data={data} />
-                <PersonalAllergens data={data} />
-                <PollenChart data={data} />
-                <TripPlanner data={data} />
+                {activeTab === 'overview' && (
+                  <>
+                    <SmartAlerts data={data} />
+                    <AqiWidget data={data} />
+                    <div className="h-px w-full bg-gradient-to-r from-transparent via-slate-200 to-transparent my-8" />
+                    <CurrentStatus data={data} />
+                  </>
+                )}
+                {activeTab === 'allergens' && (
+                  <>
+                    <PersonalAllergens data={data} />
+                    <PollenChart data={data} />
+                  </>
+                )}
+                {activeTab === 'planner' && (
+                  <TripPlanner data={data} />
+                )}
               </div>
             ) : null}
           </>
