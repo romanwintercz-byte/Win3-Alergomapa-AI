@@ -107,7 +107,8 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
         familyProfiles: profiles.map(p => ({
           name: p.name,
           trackedPollen: p.trackedAllergens,
-          personalAllergens: p.customAllergens.map(ca => `${ca.name} (${ca.category})`)
+          personalAllergens: p.customAllergens.map(ca => `${ca.name} (${ca.category})`),
+          bloodTestResults: p.bloodTestResults
         })),
         currentAirQualityData: data?.current
       };
@@ -139,7 +140,7 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
     return (
       <button
         onClick={() => { setIsOpen(true); setIsMinimized(false); }}
-        className="fixed bottom-6 right-6 p-4 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 transition-all z-50 group flex items-center justify-center"
+        className="fixed bottom-24 md:bottom-6 right-4 md:right-6 p-4 bg-indigo-600 text-white rounded-full shadow-lg shadow-indigo-200 hover:bg-indigo-700 hover:scale-105 transition-all z-50 group flex items-center justify-center"
         aria-label="Otevřít asistenta"
       >
         <Bot className="w-6 h-6 group-hover:rotate-12 transition-transform" />
@@ -149,8 +150,8 @@ export const ChatAssistant: React.FC<{ data: AirQualityData | null }> = ({ data 
 
   return (
     <div className={cn(
-      "fixed right-4 md:right-6 bottom-4 md:bottom-6 z-50 bg-white rounded-3xl shadow-2xl shadow-indigo-900/10 border border-indigo-100 flex flex-col transition-all duration-300 overflow-hidden",
-      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[530px]"
+      "fixed right-4 md:right-6 bottom-24 md:bottom-6 z-50 bg-white rounded-3xl shadow-2xl shadow-indigo-900/10 border border-indigo-100 flex flex-col transition-all duration-300 overflow-hidden",
+      isMinimized ? "w-72 h-14" : "w-[calc(100vw-2rem)] md:w-96 h-[500px]"
     )}>
       {/* Header */}
       <div 

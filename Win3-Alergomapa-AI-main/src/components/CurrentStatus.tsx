@@ -103,7 +103,7 @@ export const CurrentStatus: React.FC<CurrentStatusProps> = ({ data }) => {
 
           <div className="relative z-10">
             <h3 className="font-bold text-lg mb-1 flex items-center gap-2">
-              <span>👨‍👩‍👧‍👦</span>
+              <span>👨👩👧👦</span>
               <span>Dnešní přehled pro členy rodiny</span>
             </h3>
             <p className="text-xs text-indigo-200 mb-5">

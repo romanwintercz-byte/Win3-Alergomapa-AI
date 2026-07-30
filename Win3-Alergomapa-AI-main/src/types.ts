@@ -49,11 +49,34 @@ export interface CustomAllergen {
   category: CustomAllergenCategory;
 }
 
+export interface DiaryEntry {
+  id: string;
+  date: string; // YYYY-MM-DD
+  symptomLevel: number; // 0-3
+  symptoms: string[];
+  medicationsTaken: string[]; // IDs of medications taken
+  note?: string;
+}
+
+export interface Medication {
+  id: string;
+  name: string;
+  type: 'pill' | 'spray' | 'drops' | 'other';
+  usageType?: 'regular' | 'as_needed';
+  defaultDose?: string;
+}
+
 export interface UserProfile {
   id: string;
   name: string;
+  lastName?: string;
+  address?: string;
+  dateOfBirth?: string;
   avatarEmoji: string;
   trackedAllergens: AllergenKey[];
   customAllergens: CustomAllergen[];
+  diaryEntries?: DiaryEntry[];
+  medications?: Medication[];
+  bloodTestResults?: Record<string, number>;
   color?: string;
 }

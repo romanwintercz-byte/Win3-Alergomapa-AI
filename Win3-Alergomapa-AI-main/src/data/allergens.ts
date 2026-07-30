@@ -75,6 +75,12 @@ export const ALLERGENS: AllergenInfo[] = [
   }
 ];
 
+export const EU_FOOD_ALLERGENS = [
+  'Obiloviny s lepkem', 'Korýši', 'Vejce', 'Ryby', 'Arašídy', 
+  'Sója', 'Mléko', 'Skořápkové plody', 'Celer', 'Hořčice', 
+  'Sezam', 'Oxid siřičitý', 'Lupina', 'Měkkýši'
+];
+
 export const KNOWN_CROSS_REACTIONS: Record<string, string[]> = {
   'kočka': ['Vepřové maso (tzv. Pork-cat syndrom)'],
   'pes': ['Hovězí maso', 'Mléko (vzácně)'],

@@ -39,6 +39,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👨',
     trackedAllergens: ['birch', 'grass'],
     customAllergens: [],
+    diaryEntries: [],
+    medications: [],
     color: 'indigo'
   },
   {
@@ -47,6 +49,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👦',
     trackedAllergens: ['birch', 'ragweed'],
     customAllergens: [{ id: 'c1', name: 'Ořechy', category: 'food' }],
+    diaryEntries: [],
+    medications: [],
     color: 'emerald'
   },
   {
@@ -55,6 +59,8 @@ const DEFAULT_PROFILES: UserProfile[] = [
     avatarEmoji: '👧',
     trackedAllergens: ['grass', 'mugwort'],
     customAllergens: [{ id: 'c2', name: 'Kočky', category: 'animal' }],
+    diaryEntries: [],
+    medications: [],
     color: 'rose'
   }
 ];
@@ -124,6 +130,54 @@ export const AppProvider: React.FC<{ children: React.ReactNode }> = ({ children 
       }
     } else {
       setCurrentLocationState(DEFAULT_LOCATION);
+      
+      // Pokus o automatické zjištění polohy při prvním spuštění
+      if (typeof window !== 'undefined' && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          async (position) => {
+            const { latitude, longitude } = position.coords;
+            try {
+              // Pokus o získání názvu místa přes Nominatim (OpenStreetMap)
+              const res = await fetch(`https://nominatim.openstreetmap.org/reverse?format=json&lat=${latitude}&lon=${longitude}&zoom=14&accept-language=cs`);
+              if (res.ok) {
+                const data = await res.json();
+                const name = data.address?.city || data.address?.town || data.address?.village || data.address?.municipality || data.address?.suburb || data.address?.county || "Aktuální poloha";
+                const country = data.address?.country || "Neznámá";
+                const admin1 = data.address?.state || "";
+                
+                const newLoc: Location = {
+                  id: Date.now(),
+                  name,
+                  latitude,
+                  longitude,
+                  country,
+                  admin1
+                };
+                setCurrentLocationState(newLoc);
+                localStorage.setItem('alergo_location', JSON.stringify(newLoc));
+              } else {
+                throw new Error("Nominatim API failed");
+              }
+            } catch (err) {
+              // Fallback pokud se nepodaří získat název
+              const fallbackLoc: Location = {
+                id: Date.now(),
+                name: "Aktuální poloha",
+                latitude,
+                longitude,
+                country: "",
+                admin1: ""
+              };
+              setCurrentLocationState(fallbackLoc);
+              localStorage.setItem('alergo_location', JSON.stringify(fallbackLoc));
+            }
+          },
+          (error) => {
+            console.warn("Automatické zjištění polohy se nezdařilo nebo bylo zamítnuto:", error);
+          },
+          { timeout: 10000, maximumAge: 60000 }
+        );
+      }
     }
 
     setIsLoaded(true);
