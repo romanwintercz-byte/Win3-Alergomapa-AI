@@ -10,9 +10,84 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json());
+  app.use(express.json({ limit: '10mb' }));
 
   // API routes
+  app.post("/api/scan-food", async (req, res) => {
+    const apiKey = process.env.GEMINI_API_KEY;
+    if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {
+      return res.status(400).json({ error: "Chybí platný GEMINI_API_KEY v souboru .env" });
+    }
+
+    try {
+      const ai = new GoogleGenAI({ apiKey });
+      const { image, allergens, profileName } = req.body;
+
+      if (!image || !allergens) {
+        return res.status(400).json({ error: "Chybí obrázek nebo alergeny." });
+      }
+
+      const base64Data = image.split(',')[1];
+      const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
+
+      const systemInstruction = `Jsi expert na analýzu složení potravin a alergie.
+Tvým úkolem je zkontrolovat složení potraviny z obrázku vůči seznamu alergenů.
+Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}.
+
+Postup:
+1. Přečti pečlivě složení potraviny z obrázku (včetně "může obsahovat stopy").
+2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a e-kódy (např. syrovátka pro mléko, lecitin, kasein, E-kódy zvířecího původu apod.).
+3. Rozhodni, zda je potravina pro uživatele bezpečná.
+
+Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez markdown bloku, čistý JSON):
+{
+  "safe": boolean,
+  "foundAllergens": ["seznam", "nalezených", "alergenů"],
+  "reasoning": "Vysvětlení, proč je to nebezpečné (co se našlo pod jakým názvem) nebo bezpečné.",
+  "extractedIngredients": "Přesný text složení, který jsi z obrázku přečetl"
+}`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: [
+          {
+            role: "user",
+            parts: [
+              {
+                inlineData: {
+                  data: base64Data,
+                  mimeType: mimeType
+                }
+              },
+              { text: "Zanalyzuj toto složení." }
+            ]
+          }
+        ],
+        config: { 
+          systemInstruction,
+          responseMimeType: "application/json"
+        }
+      });
+
+      if (response && response.text) {
+        try {
+          const cleanText = response.text.replace(/\`\`\`json\n/g, '').replace(/\`\`\`/g, '').trim();
+          const result = JSON.parse(cleanText);
+          res.json({ result });
+        } catch (parseError) {
+          console.error("JSON parse error:", response.text);
+          res.status(500).json({ error: "AI vrátilo nečitelný formát." });
+        }
+      } else {
+        res.status(500).json({ error: "AI nevrátilo žádnou odpověď." });
+      }
+
+    } catch (error: any) {
+      console.error(error);
+      res.status(500).json({ error: error.message || "Interní chyba serveru" });
+    }
+  });
+
   app.post("/api/chat", async (req, res) => {
     const apiKey = process.env.GEMINI_API_KEY;
     if (!apiKey || apiKey === "MY_GEMINI_API_KEY") {

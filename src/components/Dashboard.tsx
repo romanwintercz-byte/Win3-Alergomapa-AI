@@ -14,9 +14,10 @@ import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
 import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
-import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map } from 'lucide-react';
+import { FoodScanner } from './FoodScanner';
+import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode } from 'lucide-react';
 
-type Tab = 'overview' | 'allergens' | 'diary' | 'planner';
+type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner';
 
 export const Dashboard: React.FC = () => {
   const { currentLocation, activeProfileId } = useAppContext();
@@ -135,6 +136,17 @@ export const Dashboard: React.FC = () => {
               <Map className="w-6 h-6 md:w-4 md:h-4" />
               <span>Výlety</span>
             </button>
+            <button
+              onClick={() => handleTabChange('scanner')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'scanner'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <ScanBarcode className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Skener</span>
+            </button>
           </div>
         </div>
 
@@ -171,6 +183,9 @@ export const Dashboard: React.FC = () => {
                 )}
                 {activeTab === 'planner' && (
                   <TripPlanner data={data} />
+                )}
+                {activeTab === 'scanner' && (
+                  <FoodScanner />
                 )}
               </div>
             ) : null}
