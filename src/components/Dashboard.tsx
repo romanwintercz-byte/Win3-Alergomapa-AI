@@ -9,6 +9,7 @@ import { AqiWidget } from './AqiWidget';
 import { CurrentStatus } from './CurrentStatus';
 import { PollenChart } from './PollenChart';
 import { PersonalAllergens } from './PersonalAllergens';
+import { VisualAllergyProfile } from './VisualAllergyProfile';
 import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
 import { SmartAlerts } from './SmartAlerts';
@@ -164,6 +165,7 @@ export const Dashboard: React.FC = () => {
                 {activeTab === 'allergens' && (
                   <>
                     <PersonalAllergens data={data} />
+                    <VisualAllergyProfile />
                     <PollenChart data={data} />
                   </>
                 )}
