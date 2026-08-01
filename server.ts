@@ -34,11 +34,12 @@ async function startServer() {
       const systemInstruction = `Jsi expert na analýzu složení potravin a alergie.
 Tvým úkolem je zkontrolovat složení potraviny z obrázku vůči seznamu alergenů.
 Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}.
+(Poznámka: U každého alergenu je uveden stav verifikace. "Potvrzeno lékařem" a "Podezření" znamená přísnou kontrolu na stopy i skryté alergeny. "Sledováno (Intolerance, ne anafylaxe)" znamená, že jde pouze o zažívací diskomfort a nejde o ohrožení života.)
 
 Postup:
 1. Přečti pečlivě složení potraviny z obrázku (včetně "může obsahovat stopy").
 2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a E-kódy (např. lecitin, E-kódy zvířecího původu). Důležité: Pokud má uživatel alergii na "Mléko", pečlivě zohledni, že nesmí vůbec žádnou mléčnou bílkovinu (syrovátka, kasein, kaseinát, sušené podmáslí, tvaroh, jogurtová kultura atd.) ani laktózu. Pečlivě v "reasoning" vysvětli rozdíl mezi intolerancí laktózy (kde vadí jen laktóza) a alergií na bílkovinu (kde vadí i syrovátka), a upozorni na zjištěné riziko.
-3. Rozhodni, zda je potravina pro uživatele bezpečná.
+3. Rozhodni, zda je potravina pro uživatele bezpečná. Pokud obsahuje alergen se stavem "Intolerance", potravina není bezpečná, ale v odůvodnění zdůrazni, že jde o riziko zažívacích potíží.
 
 Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez markdown bloku, čistý JSON):
 {

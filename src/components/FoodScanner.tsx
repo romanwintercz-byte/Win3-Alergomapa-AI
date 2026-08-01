@@ -67,9 +67,22 @@ export const FoodScanner: React.FC = () => {
 
     try {
       // Gather allergens for prompt
-      const trackedNames = currentProfile.trackedAllergens.map(id => ALLERGENS.find(a => a.id === id)?.name).filter(Boolean);
-      const customNames = currentProfile.customAllergens.map(a => a.name);
-      const allAllergens = [...trackedNames, ...customNames];
+      const trackedNames = currentProfile.trackedAllergens.map(id => {
+        const info = ALLERGENS.find(a => a.id === id);
+        if (!info) return null;
+        const status = currentProfile.allergenStatuses?.[id] || 'suspected';
+        let statusText = 'Podezření';
+        if (status === 'confirmed') statusText = 'Potvrzeno lékařem';
+        if (status === 'monitored') statusText = 'Sledováno (Intolerance, ne anafylaxe)';
+        return `${info.name} (${statusText})`;
+      }).filter(Boolean);
+      const customAllergensWithStatus = currentProfile.customAllergens.map(a => {
+        let statusText = 'Podezření';
+        if (a.status === 'confirmed') statusText = 'Potvrzeno lékařem';
+        if (a.status === 'monitored') statusText = 'Sledováno (Intolerance, ne anafylaxe)';
+        return `${a.name} (${statusText})`;
+      });
+      const allAllergens = [...trackedNames, ...customAllergensWithStatus];
 
       if (allAllergens.length === 0) {
         setError("Profil nemá nastavené žádné alergeny ke kontrole. Přidejte je nejprve v sekci Alergeny.");

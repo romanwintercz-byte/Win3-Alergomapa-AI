@@ -28,6 +28,7 @@ export const ProfileSelector: React.FC = () => {
   const [avatarEmoji, setAvatarEmoji] = useState('👦');
   const [color, setColor] = useState('indigo');
   const [bloodTestResults, setBloodTestResults] = useState<Record<string, number>>({});
+  const [allergenStatuses, setAllergenStatuses] = useState<Record<string, import('../types').VerificationStatus>>({});
 
   const openAddModal = () => {
     setEditingProfile(null);
@@ -38,6 +39,7 @@ export const ProfileSelector: React.FC = () => {
     setAvatarEmoji('👦');
     setColor('emerald');
     setBloodTestResults({});
+    setAllergenStatuses({});
     setIsModalOpen(true);
   };
 
@@ -50,6 +52,7 @@ export const ProfileSelector: React.FC = () => {
     setAvatarEmoji(p.avatarEmoji);
     setColor(p.color || 'indigo');
     setBloodTestResults(p.bloodTestResults || {});
+    setAllergenStatuses(p.allergenStatuses || {});
     setIsModalOpen(true);
   };
 
@@ -58,6 +61,13 @@ export const ProfileSelector: React.FC = () => {
     if (!name.trim()) return;
 
     if (editingProfile) {
+      const updatedCustomAllergens = editingProfile.customAllergens.map(ca => {
+        if (allergenStatuses[ca.id]) {
+          return { ...ca, status: allergenStatuses[ca.id] };
+        }
+        return ca;
+      });
+
       updateProfile(editingProfile.id, {
         name: name.trim(),
         lastName: lastName.trim(),
@@ -65,7 +75,9 @@ export const ProfileSelector: React.FC = () => {
         dateOfBirth,
         avatarEmoji,
         bloodTestResults,
-        color
+        allergenStatuses,
+        color,
+        customAllergens: updatedCustomAllergens
       });
     } else {
       addProfile({
@@ -75,6 +87,7 @@ export const ProfileSelector: React.FC = () => {
         dateOfBirth,
         avatarEmoji,
         bloodTestResults,
+        allergenStatuses,
         color,
         trackedAllergens: ['birch', 'grass'],
         customAllergens: []
@@ -267,62 +280,91 @@ export const ProfileSelector: React.FC = () => {
                 </div>
               </div>
 
-              {/* Blood Test Results */}
+              {/* Advanced Allergen Settings */}
               {editingProfile && (editingProfile.trackedAllergens.length > 0 || editingProfile.customAllergens.length > 0) && (
                 <div className="pt-4 border-t border-slate-100">
                   <div className="flex items-center gap-2 mb-3">
                     <Activity className="w-4 h-4 text-indigo-500" />
                     <label className="block text-sm font-bold text-slate-800">
-                      Výsledky z krve (IgE třídy)
+                      Pokročilé nastavení alergenů
                     </label>
                   </div>
                   <p className="text-xs text-slate-500 mb-4">
-                    Zadejte hodnotu (třídu 0-6), kterou vám naměřili na alergologii pro přesnější doporučení.
+                    Nastavte stav verifikace a volitelně doplňte výsledky z krve (IgE třídy 0-6).
                   </p>
                   
-                  <div className="space-y-3">
+                  <div className="space-y-4">
                     {editingProfile.trackedAllergens.map(allergenId => {
                       const allergenInfo = ALLERGENS.find(a => a.id === allergenId);
                       if (!allergenInfo) return null;
                       return (
-                        <div key={allergenId} className="flex items-center justify-between gap-4">
-                          <span className="text-sm font-medium text-slate-700">{allergenInfo.name}</span>
-                          <input
-                            type="number"
-                            min="0"
-                            max="6"
-                            placeholder="0-6"
-                            value={bloodTestResults[allergenId] !== undefined ? bloodTestResults[allergenId] : ''}
-                            onChange={(e) => {
-                              const val = e.target.value;
-                              setBloodTestResults(prev => ({
-                                ...prev,
-                                [allergenId]: val === '' ? undefined as any : Number(val)
-                              }));
-                            }}
-                            className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                          />
+                        <div key={allergenId} className="flex flex-col gap-2">
+                          <span className="text-sm font-bold text-slate-700">{allergenInfo.name} (Pyl)</span>
+                          <div className="flex items-center gap-2">
+                            <select
+                              value={allergenStatuses[allergenId] || 'suspected'}
+                              onChange={(e) => {
+                                setAllergenStatuses(prev => ({ ...prev, [allergenId]: e.target.value as import('../types').VerificationStatus }));
+                              }}
+                              className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            >
+                              <option value="confirmed">Potvrzeno lékařem</option>
+                              <option value="suspected">Podezření / Testování</option>
+                              <option value="monitored">Sledováno / Intolerance</option>
+                            </select>
+                            <input
+                              type="number"
+                              min="0"
+                              max="6"
+                              placeholder="IgE 0-6"
+                              value={bloodTestResults[allergenId] !== undefined ? bloodTestResults[allergenId] : ''}
+                              onChange={(e) => {
+                                const val = e.target.value;
+                                setBloodTestResults(prev => ({
+                                  ...prev,
+                                  [allergenId]: val === '' ? undefined as any : Number(val)
+                                }));
+                              }}
+                              className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                            />
+                          </div>
                         </div>
                       );
                     })}
                     {editingProfile.customAllergens.map(customAllergen => (
-                      <div key={customAllergen.id} className="flex items-center justify-between gap-4">
-                        <span className="text-sm font-medium text-slate-700">{customAllergen.name}</span>
-                        <input
-                          type="number"
-                          min="0"
-                          max="6"
-                          placeholder="0-6"
-                          value={bloodTestResults[customAllergen.id] !== undefined ? bloodTestResults[customAllergen.id] : ''}
-                          onChange={(e) => {
-                            const val = e.target.value;
-                            setBloodTestResults(prev => ({
-                              ...prev,
-                              [customAllergen.id]: val === '' ? undefined as any : Number(val)
-                            }));
-                          }}
-                          className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-sm text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
-                        />
+                      <div key={customAllergen.id} className="flex flex-col gap-2">
+                        <span className="text-sm font-bold text-slate-700">{customAllergen.name}</span>
+                        <div className="flex items-center gap-2">
+                          <select
+                            value={customAllergen.status || allergenStatuses[customAllergen.id] || 'suspected'}
+                            onChange={(e) => {
+                                // Měníme status v allergenStatuses (aby se mohl uložit na profil případně, ale customAllergens si to drží u sebe)
+                                // Očekává se, že custom alergen status budeme možná updatovat zvlášť.
+                                // Uděláme to čistě - setAllergenStatuses.
+                                setAllergenStatuses(prev => ({ ...prev, [customAllergen.id]: e.target.value as import('../types').VerificationStatus }));
+                            }}
+                            className="flex-1 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          >
+                            <option value="confirmed">Potvrzeno lékařem</option>
+                            <option value="suspected">Podezření / Testování</option>
+                            <option value="monitored">Sledováno / Intolerance</option>
+                          </select>
+                          <input
+                            type="number"
+                            min="0"
+                            max="6"
+                            placeholder="IgE 0-6"
+                            value={bloodTestResults[customAllergen.id] !== undefined ? bloodTestResults[customAllergen.id] : ''}
+                            onChange={(e) => {
+                              const val = e.target.value;
+                              setBloodTestResults(prev => ({
+                                ...prev,
+                                [customAllergen.id]: val === '' ? undefined as any : Number(val)
+                              }));
+                            }}
+                            className="w-20 bg-slate-50 border border-slate-200 rounded-lg px-2 py-1.5 text-xs text-center focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+                          />
+                        </div>
                       </div>
                     ))}
                   </div>

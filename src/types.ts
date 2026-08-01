@@ -43,10 +43,13 @@ export interface AllergenInfo {
 
 export type CustomAllergenCategory = 'food' | 'animal' | 'mite' | 'other';
 
+export type VerificationStatus = 'confirmed' | 'suspected' | 'monitored';
+
 export interface CustomAllergen {
   id: string;
   name: string;
   category: CustomAllergenCategory;
+  status?: VerificationStatus;
 }
 
 export interface DiaryEntry {
@@ -75,6 +78,7 @@ export interface UserProfile {
   avatarEmoji: string;
   trackedAllergens: AllergenKey[];
   customAllergens: CustomAllergen[];
+  allergenStatuses?: Record<string, VerificationStatus>;
   diaryEntries?: DiaryEntry[];
   medications?: Medication[];
   bloodTestResults?: Record<string, number>;
