@@ -84,3 +84,28 @@ export interface UserProfile {
   bloodTestResults?: Record<string, number>;
   color?: string;
 }
+
+export type InteractionSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
+export type ItemType = 'medication' | 'allergy' | 'diet' | 'supplement';
+
+export interface InteractionRule {
+  id: string;
+  triggerType: ItemType;
+  triggerKeywords: string[]; 
+  targetType: ItemType;
+  targetKeywords: string[];
+  severity: InteractionSeverity;
+  message: string;
+  timeSpacingHours?: number;
+  description?: string;
+}
+
+export interface InteractionResult {
+  ruleId: string;
+  severity: InteractionSeverity;
+  message: string;
+  timeSpacingHours?: number;
+  triggerMatch: string;
+  targetMatch?: string;
+  description?: string;
+}
