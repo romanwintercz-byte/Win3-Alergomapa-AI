@@ -10,7 +10,8 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  app.use(express.json({ limit: '10mb' }));
+  app.use(express.json({ limit: '50mb' }));
+  app.use(express.urlencoded({ limit: '50mb', extended: true }));
 
   // API routes
   app.post("/api/scan-food", async (req, res) => {
@@ -36,7 +37,7 @@ Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}.
 
 Postup:
 1. Přečti pečlivě složení potraviny z obrázku (včetně "může obsahovat stopy").
-2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a e-kódy (např. syrovátka pro mléko, lecitin, kasein, E-kódy zvířecího původu apod.).
+2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a E-kódy (např. lecitin, E-kódy zvířecího původu). Důležité: Pokud má uživatel alergii na "Mléko", pečlivě zohledni, že nesmí vůbec žádnou mléčnou bílkovinu (syrovátka, kasein, kaseinát, sušené podmáslí, tvaroh, jogurtová kultura atd.) ani laktózu. Pečlivě v "reasoning" vysvětli rozdíl mezi intolerancí laktózy (kde vadí jen laktóza) a alergií na bílkovinu (kde vadí i syrovátka), a upozorni na zjištěné riziko.
 3. Rozhodni, zda je potravina pro uživatele bezpečná.
 
 Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez markdown bloku, čistý JSON):
