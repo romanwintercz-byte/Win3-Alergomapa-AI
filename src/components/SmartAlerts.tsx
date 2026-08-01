@@ -2,7 +2,8 @@ import React, { useMemo } from 'react';
 import { useAppContext } from '../store';
 import { AirQualityData } from '../types';
 import { ALLERGENS, getPollenLevel } from '../data/allergens';
-import { BellRing, ShieldAlert, Pill, Wind, Lightbulb, CheckCircle2 } from 'lucide-react';
+import { BellRing, ShieldAlert, Pill, Wind, CheckCircle2, AlertTriangle, Info } from 'lucide-react';
+import { checkInteractions } from '../hooks/useInteractionChecker';
 
 interface SmartAlertsProps {
   data: AirQualityData;
@@ -19,6 +20,19 @@ export const SmartAlerts: React.FC<SmartAlertsProps> = ({ data }) => {
     const profilesToCheck = activeProfileId === 'all' ? profiles : (activeProfile ? [activeProfile] : []);
 
     profilesToCheck.forEach(profile => {
+      // 0. Interakce léků a alergenů (Universal Interaction Engine)
+      const interactions = checkInteractions(profile);
+      interactions.forEach(interaction => {
+         newAlerts.push({
+            type: interaction.severity === 'CRITICAL' ? 'danger' : interaction.severity === 'WARNING' ? 'warning' : 'info',
+            icon: interaction.severity === 'CRITICAL' ? <ShieldAlert className="w-5 h-5" /> : interaction.severity === 'WARNING' ? <AlertTriangle className="w-5 h-5" /> : <Info className="w-5 h-5" />,
+            title: activeProfileId === 'all' ? `Interakce (${profile.name})` : 'Důležité upozornění',
+            message: interaction.message + (interaction.timeSpacingHours ? ` Odstup: ${interaction.timeSpacingHours} hod.` : ''),
+            description: interaction.description,
+            profileId: profile.id
+         });
+      });
+
       // 1. Zkontrolovat pyly
       const highPollens = profile.trackedAllergens.map(id => {
         const allergen = ALLERGENS.find(a => a.id === id);
@@ -92,6 +106,7 @@ export const SmartAlerts: React.FC<SmartAlertsProps> = ({ data }) => {
               alert.type === 'danger' ? 'bg-red-50 border-red-100 text-red-800' :
               alert.type === 'warning' ? 'bg-amber-50 border-amber-100 text-amber-800' :
               alert.type === 'medication' ? 'bg-emerald-50 border-emerald-100 text-emerald-800' :
+              alert.type === 'info' ? 'bg-blue-50 border-blue-100 text-blue-800' :
               'bg-green-50 border-green-100 text-green-800'
             }`}
           >
@@ -99,6 +114,7 @@ export const SmartAlerts: React.FC<SmartAlertsProps> = ({ data }) => {
               alert.type === 'danger' ? 'text-red-500' :
               alert.type === 'warning' ? 'text-amber-500' :
               alert.type === 'medication' ? 'text-emerald-500' :
+              alert.type === 'info' ? 'text-blue-500' :
               'text-green-500'
             }`}>
               {alert.icon}
@@ -109,10 +125,22 @@ export const SmartAlerts: React.FC<SmartAlertsProps> = ({ data }) => {
                 alert.type === 'danger' ? 'text-red-700' :
                 alert.type === 'warning' ? 'text-amber-700' :
                 alert.type === 'medication' ? 'text-emerald-700' :
+                alert.type === 'info' ? 'text-blue-700' :
                 'text-green-700'
               } leading-relaxed`}>
                 {alert.message}
               </p>
+              {alert.description && (
+                <p className={`text-[10px] mt-1.5 opacity-80 ${
+                  alert.type === 'danger' ? 'text-red-800' :
+                  alert.type === 'warning' ? 'text-amber-800' :
+                  alert.type === 'medication' ? 'text-emerald-800' :
+                  alert.type === 'info' ? 'text-blue-800' :
+                  'text-green-800'
+                }`}>
+                  {alert.description}
+                </p>
+              )}
             </div>
           </div>
         ))}
