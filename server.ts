@@ -22,30 +22,36 @@ async function startServer() {
 
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const { image, allergens, profileName } = req.body;
+      const { image, allergens, medications, profileName } = req.body;
 
-      if (!image || !allergens) {
-        return res.status(400).json({ error: "Chybí obrázek nebo alergeny." });
+      if (!image || (!allergens && !medications)) {
+        return res.status(400).json({ error: "Chybí obrázek nebo zdravotní údaje." });
       }
 
       const base64Data = image.split(',')[1];
       const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
 
-      const systemInstruction = `Jsi expert na analýzu složení potravin a alergie.
-Tvým úkolem je zkontrolovat složení potraviny z obrázku vůči seznamu alergenů.
-Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}.
-(Poznámka: U každého alergenu je uveden stav verifikace. "Potvrzeno lékařem" a "Podezření" znamená přísnou kontrolu na stopy i skryté alergeny. "Sledováno (Intolerance, ne anafylaxe)" znamená, že jde pouze o zažívací diskomfort a nejde o ohrožení života.)
+      let medsText = "";
+      if (medications && medications.length > 0) {
+        medsText = `Uživatel také užívá tyto léky/doplňky stravy: ${medications.join(", ")}. DŮLEŽITÉ: Musíš zkontrolovat, zda některá složka potraviny nemá interakci s těmito léky (např. vápník a sója s hormony štítné žlázy, grapefruit s léky, kofein atd.).`;
+      }
+
+      const systemInstruction = `Jsi expert na analýzu složení potravin a alergie, ale také lékárník.
+Tvým úkolem je zkontrolovat složení potraviny z obrázku vůči seznamu alergenů a léků uživatele.
+Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}. (Poznámka: U každého alergenu je uveden stav verifikace. "Potvrzeno lékařem" a "Podezření" znamená přísnou kontrolu na stopy i skryté alergeny. "Sledováno (Intolerance, ne anafylaxe)" znamená, že jde pouze o zažívací diskomfort.)
+${medsText}
 
 Postup:
 1. Přečti pečlivě složení potraviny z obrázku (včetně "může obsahovat stopy").
-2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a E-kódy (např. lecitin, E-kódy zvířecího původu). Důležité: Pokud má uživatel alergii na "Mléko", pečlivě zohledni, že nesmí vůbec žádnou mléčnou bílkovinu (syrovátka, kasein, kaseinát, sušené podmáslí, tvaroh, jogurtová kultura atd.) ani laktózu. Pečlivě v "reasoning" vysvětli rozdíl mezi intolerancí laktózy (kde vadí jen laktóza) a alergií na bílkovinu (kde vadí i syrovátka), a upozorni na zjištěné riziko.
-3. Rozhodni, zda je potravina pro uživatele bezpečná. Pokud obsahuje alergen se stavem "Intolerance", potravina není bezpečná, ale v odůvodnění zdůrazni, že jde o riziko zažívacích potíží.
+2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a E-kódy.
+3. Zkontroluj případné interakce složení potraviny (např. grepy, sója, mléčné výrobky) se seznamem léků uživatele.
+4. Rozhodni, zda je potravina pro uživatele bezpečná. Pokud obsahuje alergen se stavem "Intolerance", potravina není bezpečná (zažívací potíže). Pokud existuje interakce s lékem, napiš kritické varování ohledně vstřebávání léku.
 
 Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez markdown bloku, čistý JSON):
 {
   "safe": boolean,
-  "foundAllergens": ["seznam", "nalezených", "alergenů"],
-  "reasoning": "Vysvětlení, proč je to nebezpečné (co se našlo pod jakým názvem) nebo bezpečné.",
+  "foundAllergens": ["seznam", "nalezených", "alergenů", "nebo látek interagujících s léky"],
+  "reasoning": "Vysvětlení, proč je to nebezpečné (alergen, nebo interakce s lékem).",
   "extractedIngredients": "Přesný text složení, který jsi z obrázku přečetl"
 }`;
 

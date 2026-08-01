@@ -83,9 +83,11 @@ export const FoodScanner: React.FC = () => {
         return `${a.name} (${statusText})`;
       });
       const allAllergens = [...trackedNames, ...customAllergensWithStatus];
+      
+      const medications = (currentProfile.medications || []).map(m => m.name);
 
-      if (allAllergens.length === 0) {
-        setError("Profil nemá nastavené žádné alergeny ke kontrole. Přidejte je nejprve v sekci Alergeny.");
+      if (allAllergens.length === 0 && medications.length === 0) {
+        setError("Profil nemá nastavené žádné alergeny ani léky ke kontrole. Přidejte je nejprve v sekci Zdraví.");
         setIsScanning(false);
         return;
       }
@@ -96,6 +98,7 @@ export const FoodScanner: React.FC = () => {
         body: JSON.stringify({
           image: imageSrc,
           allergens: allAllergens,
+          medications: medications,
           profileName: currentProfile.name
         })
       });

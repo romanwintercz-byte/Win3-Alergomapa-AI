@@ -9,6 +9,7 @@ import { AqiWidget } from './AqiWidget';
 import { CurrentStatus } from './CurrentStatus';
 import { PollenChart } from './PollenChart';
 import { PersonalAllergens } from './PersonalAllergens';
+import { PersonalMedications } from './PersonalMedications';
 import { VisualAllergyProfile } from './VisualAllergyProfile';
 import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
@@ -112,7 +113,7 @@ export const Dashboard: React.FC = () => {
               }`}
             >
               <Bug className="w-6 h-6 md:w-4 md:h-4" />
-              <span>Alergeny</span>
+              <span>Zdraví</span>
             </button>
             <button
               onClick={() => handleTabChange('diary')}
@@ -178,6 +179,7 @@ export const Dashboard: React.FC = () => {
                 {activeTab === 'allergens' && (
                   <>
                     <PersonalAllergens data={data} />
+                    <PersonalMedications />
                     <VisualAllergyProfile />
                     <PollenChart data={data} />
                   </>

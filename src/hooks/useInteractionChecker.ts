@@ -49,7 +49,7 @@ export const checkInteractions = (profile: UserProfile | undefined): Interaction
     } 
     // Preventivní upozornění pouze na základě triggeru (např. uživatel bere lék, který se nesmí s mlékem)
     // Zobrazíme upozornění, i když nemá mléko zapsané v profilu.
-    else if (triggerMatch && (rule.targetType === 'diet' || rule.targetType === 'food' || rule.targetType === 'supplement')) {
+    else if (triggerMatch && (rule.targetType === 'diet' || rule.targetType === 'supplement')) {
        const isPreventiveWarning = !targetMatch && (rule.triggerType === 'medication' || rule.triggerType === 'supplement');
        
        if (isPreventiveWarning) {
