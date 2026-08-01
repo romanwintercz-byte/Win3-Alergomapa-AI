@@ -1,10 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useAppContext } from '../store';
-import { Camera, Upload, AlertTriangle, ShieldCheck, Loader2, Image as ImageIcon } from 'lucide-react';
+import { Camera, Upload, AlertTriangle, ShieldCheck, Loader2, Image as ImageIcon, Barcode, Search } from 'lucide-react';
 import { ALLERGENS } from '../data/allergens';
 
 export const FoodScanner: React.FC = () => {
   const { activeProfileId, activeProfile } = useAppContext();
+  const [scanMode, setScanMode] = useState<'image' | 'barcode'>('image');
+  const [barcode, setBarcode] = useState('');
   const [imageSrc, setImageSrc] = useState<string | null>(null);
   const [isScanning, setIsScanning] = useState(false);
   const [result, setResult] = useState<{
@@ -59,13 +61,32 @@ export const FoodScanner: React.FC = () => {
   };
 
   const handleScan = async () => {
-    if (!imageSrc || !currentProfile) return;
+    if ((scanMode === 'image' && !imageSrc) || (scanMode === 'barcode' && !barcode.trim()) || !currentProfile) return;
 
     setIsScanning(true);
     setError(null);
     setResult(null);
 
     try {
+      let ingredientsText = '';
+      
+      // If barcode mode, fetch from Open Food Facts first
+      if (scanMode === 'barcode') {
+        const offResponse = await fetch(`https://world.openfoodfacts.org/api/v0/product/${barcode.trim()}.json`);
+        const offData = await offResponse.json();
+        
+        if (offData.status === 0) {
+          throw new Error('Produkt s tímto čárovým kódem nebyl nalezen v databázi Open Food Facts. Zkuste prosím vyfotit složení na obalu.');
+        }
+        
+        const product = offData.product;
+        ingredientsText = product.ingredients_text_cs || product.ingredients_text_en || product.ingredients_text || '';
+        
+        if (!ingredientsText) {
+          throw new Error('Produkt byl nalezen, ale v databázi chybí text složení. Zkuste prosím vyfotit zadní stranu obalu.');
+        }
+      }
+
       // Gather allergens for prompt
       const trackedNames = currentProfile.trackedAllergens.map(id => {
         const info = ALLERGENS.find(a => a.id === id);
@@ -96,7 +117,8 @@ export const FoodScanner: React.FC = () => {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          image: imageSrc,
+          image: scanMode === 'image' ? imageSrc : undefined,
+          text: scanMode === 'barcode' ? ingredientsText : undefined,
           allergens: allAllergens,
           medications: medications,
           profileName: currentProfile.name
@@ -131,16 +153,35 @@ export const FoodScanner: React.FC = () => {
   return (
     <div className="space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
       <div className="bg-white rounded-3xl p-6 md:p-8 border border-slate-200 shadow-sm">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center">
-            <Camera className="w-5 h-5 text-indigo-600" />
+        <div className="flex flex-col md:flex-row md:items-center justify-between mb-6 gap-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-indigo-50 flex items-center justify-center shrink-0">
+              {scanMode === 'image' ? <Camera className="w-5 h-5 text-indigo-600" /> : <Barcode className="w-5 h-5 text-indigo-600" />}
+            </div>
+            <div>
+              <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+                Skener složení
+                <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Beta verze</span>
+              </h2>
+              <p className="text-sm text-slate-500">Kontrola pro profil: <span className="font-bold text-slate-700">{currentProfile.avatarEmoji} {currentProfile.name}</span></p>
+            </div>
           </div>
-          <div>
-            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
-              Skener složení
-              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Beta verze</span>
-            </h2>
-            <p className="text-sm text-slate-500">Kontrola pro profil: <span className="font-bold text-slate-700">{currentProfile.avatarEmoji} {currentProfile.name}</span></p>
+          
+          <div className="bg-slate-100 p-1 rounded-xl flex gap-1 self-start md:self-auto shrink-0 overflow-x-auto w-full md:w-auto hide-scrollbar">
+             <button
+                onClick={() => setScanMode('image')}
+                className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${scanMode === 'image' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+             >
+                <Camera className="w-3.5 h-3.5 shrink-0" />
+                Fotografie
+             </button>
+             <button
+                onClick={() => setScanMode('barcode')}
+                className={`flex-1 md:flex-none px-3 py-1.5 rounded-lg text-xs font-bold transition-colors flex items-center justify-center gap-1.5 ${scanMode === 'barcode' ? 'bg-white text-indigo-700 shadow-sm' : 'text-slate-500 hover:text-slate-700'}`}
+             >
+                <Barcode className="w-3.5 h-3.5 shrink-0" />
+                EAN Kód
+             </button>
           </div>
         </div>
 
@@ -150,57 +191,79 @@ export const FoodScanner: React.FC = () => {
         </div>
 
         <p className="text-slate-600 text-sm mb-6 max-w-2xl">
-          Vyfoťte zadní stranu obalu se složením potraviny. Umělá inteligence přečte text a porovná ho s alergickým profilem (jak osobní alergeny, tak zkřížené reakce u pylů).
+          {scanMode === 'image' 
+            ? 'Vyfoťte zadní stranu obalu se složením potraviny. Umělá inteligence přečte text a porovná ho s alergickým profilem (jak osobní alergeny, tak interakce léků).'
+            : 'Zadejte čárový kód (EAN) z obalu potraviny. Složení stáhneme z databáze a umělá inteligence jej porovná s vaším alergickým profilem.'}
         </p>
 
         <div className="flex flex-col md:flex-row gap-6">
           <div className="flex-1 space-y-4">
-            {!imageSrc ? (
-              <div 
-                className="w-full h-64 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-100 hover:border-indigo-300 transition-colors cursor-pointer"
-                onClick={() => fileInputRef.current?.click()}
-              >
-                <Upload className="w-8 h-8 mb-3 text-slate-400" />
-                <p className="font-medium text-slate-700">Nahrát fotku složení</p>
-                <p className="text-xs mt-1">Klikněte nebo použijte fotoaparát</p>
-              </div>
-            ) : (
-              <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 h-64 flex items-center justify-center">
-                <img src={imageSrc} alt="Náhled složení" className="max-h-full max-w-full object-contain" />
-                {!isScanning && (
-                  <button 
-                    onClick={() => { setImageSrc(null); setResult(null); }}
-                    className="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-2 rounded-full shadow-sm hover:bg-white transition-colors"
+            {scanMode === 'image' ? (
+              <>
+                {!imageSrc ? (
+                  <div 
+                    className="w-full h-64 border-2 border-dashed border-slate-300 rounded-2xl bg-slate-50 flex flex-col items-center justify-center text-slate-500 hover:bg-slate-100 hover:border-indigo-300 transition-colors cursor-pointer"
+                    onClick={() => fileInputRef.current?.click()}
                   >
-                    ✕
-                  </button>
+                    <Upload className="w-8 h-8 mb-3 text-slate-400" />
+                    <p className="font-medium text-slate-700">Nahrát fotku složení</p>
+                    <p className="text-xs mt-1">Klikněte nebo použijte fotoaparát</p>
+                  </div>
+                ) : (
+                  <div className="relative rounded-2xl overflow-hidden border border-slate-200 bg-slate-100 h-64 flex items-center justify-center">
+                    <img src={imageSrc} alt="Náhled složení" className="max-h-full max-w-full object-contain" />
+                    {!isScanning && (
+                      <button 
+                        onClick={() => { setImageSrc(null); setResult(null); }}
+                        className="absolute top-2 right-2 bg-white/80 backdrop-blur text-slate-700 p-2 rounded-full shadow-sm hover:bg-white transition-colors"
+                      >
+                        ✕
+                      </button>
+                    )}
+                  </div>
                 )}
+                
+                <input 
+                  type="file" 
+                  accept="image/*" 
+                  capture="environment"
+                  className="hidden" 
+                  ref={fileInputRef}
+                  onChange={handleFileChange}
+                />
+              </>
+            ) : (
+              <div className="w-full h-64 border border-slate-200 rounded-2xl bg-slate-50 flex flex-col items-center justify-center p-6 text-center shadow-inner">
+                <Barcode className="w-12 h-12 text-slate-300 mb-4" />
+                <h3 className="font-bold text-slate-700 mb-4">Hledání podle čárového kódu</h3>
+                <div className="w-full max-w-xs flex gap-2">
+                  <input
+                    type="text"
+                    value={barcode}
+                    onChange={(e) => setBarcode(e.target.value)}
+                    placeholder="Např. 8591234567890"
+                    className="flex-1 px-4 py-3 rounded-xl border border-slate-300 focus:outline-none focus:ring-2 focus:ring-indigo-500 text-sm font-medium shadow-sm"
+                    onKeyDown={(e) => e.key === 'Enter' && handleScan()}
+                  />
+                </div>
+                <p className="text-xs text-slate-400 mt-4 max-w-xs leading-relaxed">Přečtěte EAN kód (čísla pod čárovým kódem) z obalu a vložte jej sem.</p>
               </div>
             )}
-            
-            <input 
-              type="file" 
-              accept="image/*" 
-              capture="environment"
-              className="hidden" 
-              ref={fileInputRef}
-              onChange={handleFileChange}
-            />
 
             <div className="flex gap-3">
-              {imageSrc && !isScanning && !result && (
+              {((scanMode === 'image' && imageSrc) || (scanMode === 'barcode' && barcode.length > 5)) && !isScanning && !result && (
                 <button 
                   onClick={handleScan}
                   className="flex-1 bg-indigo-600 text-white font-bold py-3 px-4 rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200 flex items-center justify-center gap-2"
                 >
-                  <ImageIcon className="w-5 h-5" />
-                  Analyzovat složení
+                  {scanMode === 'image' ? <ImageIcon className="w-5 h-5" /> : <Search className="w-5 h-5" />}
+                  Analyzovat {scanMode === 'barcode' ? 'kód' : 'složení'}
                 </button>
               )}
               {isScanning && (
                 <div className="flex-1 bg-indigo-50 text-indigo-600 font-bold py-3 px-4 rounded-xl flex items-center justify-center gap-2 border border-indigo-100">
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  Čtu a analyzuji etiketu...
+                  Čtu a analyzuji {scanMode === 'barcode' ? 'data z databáze' : 'etiketu'}...
                 </div>
               )}
             </div>
@@ -273,10 +336,20 @@ export const FoodScanner: React.FC = () => {
             )}
 
             {!result && !error && !isScanning && (
-              <div className="h-full border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-50/50">
-                <ShieldCheck className="w-10 h-10 mb-3 text-slate-300" />
-                <h4 className="font-bold text-slate-500 mb-1">Čekám na fotografii</h4>
-                <p className="text-sm max-w-xs">Nahrajte etiketu a já zkontroluji všechny alergeny v profilu.</p>
+              <div className="h-full border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-50/50 min-h-[256px]">
+                {scanMode === 'image' ? (
+                  <>
+                    <ShieldCheck className="w-10 h-10 mb-3 text-slate-300" />
+                    <h4 className="font-bold text-slate-500 mb-1">Čekám na fotografii</h4>
+                    <p className="text-sm max-w-xs">Nahrajte etiketu a já zkontroluji všechny alergeny v profilu.</p>
+                  </>
+                ) : (
+                  <>
+                    <Barcode className="w-10 h-10 mb-3 text-slate-300" />
+                    <h4 className="font-bold text-slate-500 mb-1">Čekám na EAN kód</h4>
+                    <p className="text-sm max-w-xs">Zadejte čárový kód pro načtení složení produktu z databáze.</p>
+                  </>
+                )}
               </div>
             )}
           </div>

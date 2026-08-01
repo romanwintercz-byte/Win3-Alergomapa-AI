@@ -22,14 +22,27 @@ async function startServer() {
 
     try {
       const ai = new GoogleGenAI({ apiKey });
-      const { image, allergens, medications, profileName } = req.body;
+      const { image, text, allergens, medications, profileName } = req.body;
 
-      if (!image || (!allergens && !medications)) {
-        return res.status(400).json({ error: "Chybí obrázek nebo zdravotní údaje." });
+      if ((!image && !text) || (!allergens && !medications)) {
+        return res.status(400).json({ error: "Chybí vstup (obrázek nebo text) nebo zdravotní údaje." });
       }
 
-      const base64Data = image.split(',')[1];
-      const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
+      let parts: any[] = [];
+
+      if (image) {
+        const base64Data = image.split(',')[1];
+        const mimeType = image.split(',')[0].split(':')[1].split(';')[0];
+        parts.push({
+          inlineData: {
+            data: base64Data,
+            mimeType: mimeType
+          }
+        });
+        parts.push({ text: "Zanalyzuj toto složení z obrázku." });
+      } else if (text) {
+        parts.push({ text: `Zanalyzuj toto složení produktu: ${text}` });
+      }
 
       let medsText = "";
       if (medications && medications.length > 0) {
@@ -37,12 +50,12 @@ async function startServer() {
       }
 
       const systemInstruction = `Jsi expert na analýzu složení potravin a alergie, ale také lékárník.
-Tvým úkolem je zkontrolovat složení potraviny z obrázku vůči seznamu alergenů a léků uživatele.
-Sledované alergeny pro tohoto uživatele: ${allergens.join(", ")}. (Poznámka: U každého alergenu je uveden stav verifikace. "Potvrzeno lékařem" a "Podezření" znamená přísnou kontrolu na stopy i skryté alergeny. "Sledováno (Intolerance, ne anafylaxe)" znamená, že jde pouze o zažívací diskomfort.)
+Tvým úkolem je zkontrolovat složení potraviny (z obrázku nebo textu) vůči seznamu alergenů a léků uživatele.
+Sledované alergeny pro tohoto uživatele: ${allergens ? allergens.join(", ") : "žádné"}. (Poznámka: U každého alergenu je uveden stav verifikace. "Potvrzeno lékařem" a "Podezření" znamená přísnou kontrolu na stopy i skryté alergeny. "Sledováno (Intolerance, ne anafylaxe)" znamená, že jde pouze o zažívací diskomfort.)
 ${medsText}
 
 Postup:
-1. Přečti pečlivě složení potraviny z obrázku (včetně "může obsahovat stopy").
+1. Přečti pečlivě složení potraviny (včetně "může obsahovat stopy").
 2. Zkontroluj, zda se některý ze sledovaných alergenů nachází ve složení. Hledej i skryté názvy a E-kódy.
 3. Zkontroluj případné interakce složení potraviny (např. grepy, sója, mléčné výrobky) se seznamem léků uživatele.
 4. Rozhodni, zda je potravina pro uživatele bezpečná. Pokud obsahuje alergen se stavem "Intolerance", potravina není bezpečná (zažívací potíže). Pokud existuje interakce s lékem, napiš kritické varování ohledně vstřebávání léku.
@@ -52,7 +65,7 @@ Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez mar
   "safe": boolean,
   "foundAllergens": ["seznam", "nalezených", "alergenů", "nebo látek interagujících s léky"],
   "reasoning": "Vysvětlení, proč je to nebezpečné (alergen, nebo interakce s lékem).",
-  "extractedIngredients": "Přesný text složení, který jsi z obrázku přečetl"
+  "extractedIngredients": "Přesný text složení, který jsi analyzoval"
 }`;
 
       const response = await ai.models.generateContent({
@@ -60,15 +73,7 @@ Odpověz striktně a výhradně platným JSON objektem v tomto formátu (bez mar
         contents: [
           {
             role: "user",
-            parts: [
-              {
-                inlineData: {
-                  data: base64Data,
-                  mimeType: mimeType
-                }
-              },
-              { text: "Zanalyzuj toto složení." }
-            ]
+            parts: parts
           }
         ],
         config: { 
