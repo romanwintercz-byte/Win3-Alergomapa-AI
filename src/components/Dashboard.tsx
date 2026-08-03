@@ -11,6 +11,7 @@ import { PollenChart } from './PollenChart';
 import { PersonalAllergens } from './PersonalAllergens';
 import { PersonalMedications } from './PersonalMedications';
 import { VisualAllergyProfile } from './VisualAllergyProfile';
+import { AllergyEducationGuide } from './AllergyEducationGuide';
 import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
 import { SmartAlerts } from './SmartAlerts';
@@ -181,6 +182,7 @@ export const Dashboard: React.FC = () => {
                     <PersonalAllergens data={data} />
                     <PersonalMedications />
                     <VisualAllergyProfile />
+                    <AllergyEducationGuide />
                     <PollenChart data={data} />
                   </>
                 )}
