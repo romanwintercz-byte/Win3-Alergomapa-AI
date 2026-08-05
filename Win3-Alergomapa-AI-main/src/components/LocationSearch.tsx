@@ -94,13 +94,13 @@ export const LocationSearch: React.FC = () => {
   };
 
   return (
-    <div className="relative w-full max-w-md" ref={wrapperRef}>
-      <div className="relative flex items-center">
-        <Search className="absolute left-3 w-5 h-5 text-slate-400" />
+    <div className="relative w-full max-w-md min-w-0" ref={wrapperRef}>
+      <div className="relative flex items-center min-w-0">
+        <Search className="absolute left-3 w-4 h-4 md:w-5 md:h-5 text-slate-400 shrink-0" />
         <input
           type="text"
-          className="w-full pl-10 pr-12 py-2.5 bg-white/10 backdrop-blur-md border border-slate-200/20 text-slate-800 placeholder-slate-400 rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all"
-          placeholder={currentLocation?.name || "Hledat město nebo destinaci..."}
+          className="w-full min-w-0 pl-9 pr-10 md:pl-10 md:pr-12 py-2 md:py-2.5 bg-white/10 backdrop-blur-md border border-slate-200/20 text-slate-800 placeholder-slate-400 rounded-xl md:rounded-2xl shadow-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50 transition-all text-xs md:text-sm text-ellipsis overflow-hidden whitespace-nowrap"
+          placeholder={currentLocation?.name || "Hledat..."}
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onFocus={() => query.length >= 2 && setIsOpen(true)}

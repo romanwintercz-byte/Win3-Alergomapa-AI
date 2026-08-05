@@ -19,7 +19,8 @@ import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
 import { FoodScanner } from './FoodScanner';
 import { SkinTracker } from './SkinTracker';
-import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon } from 'lucide-react';
+import { DataTransferModal } from './DataTransferModal';
+import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon, Settings } from 'lucide-react';
 
 type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner' | 'skin';
 
@@ -29,6 +30,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [showDataTransfer, setShowDataTransfer] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -65,7 +67,7 @@ export const Dashboard: React.FC = () => {
     <div className="min-h-screen bg-slate-50 text-slate-900 pb-24 md:pb-12 font-sans selection:bg-indigo-100">
       {/* Header */}
       <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-xl border-b border-slate-200/50">
-        <div className="max-w-5xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between gap-4">
+        <div className="max-w-5xl mx-auto px-4 md:px-8 h-20 flex items-center justify-between gap-2 md:gap-4">
           <div className="flex items-center gap-2">
             <div className="w-10 h-10 bg-indigo-600 rounded-xl flex items-center justify-center shrink-0 shadow-lg shadow-indigo-200">
               <CloudRain className="text-white w-5 h-5" />
@@ -75,8 +77,17 @@ export const Dashboard: React.FC = () => {
             </h1>
           </div>
           
-          <div className="flex-1 flex justify-end">
-            <LocationSearch />
+          <div className="flex-1 flex justify-end items-center gap-1 md:gap-2 min-w-0">
+            <div className="flex-1 max-w-md min-w-0 flex justify-end">
+              <LocationSearch />
+            </div>
+            <button 
+              onClick={() => setShowDataTransfer(true)}
+              className="p-2 md:p-2.5 shrink-0 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+              title="Záloha a obnova dat"
+            >
+              <Settings className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
           </div>
         </div>
       </header>
@@ -216,6 +227,10 @@ export const Dashboard: React.FC = () => {
       </main>
       
       <ChatAssistant data={data} />
+      
+      {showDataTransfer && (
+        <DataTransferModal onClose={() => setShowDataTransfer(false)} />
+      )}
     </div>
   );
 };

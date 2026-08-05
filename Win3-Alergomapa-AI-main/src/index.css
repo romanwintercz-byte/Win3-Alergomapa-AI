@@ -10,6 +10,11 @@
   }
 }
 
+html, body {
+  overflow-x: hidden;
+  max-width: 100vw;
+}
+
 @media print {
   @page {
     margin: 1cm;

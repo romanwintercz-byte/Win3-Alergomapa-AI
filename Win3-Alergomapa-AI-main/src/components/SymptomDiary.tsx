@@ -319,6 +319,35 @@ export const SymptomDiary: React.FC = () => {
               />
             </div>
 
+            {/* Skin entries for this date in edit mode */}
+            {skinEntriesForDate.length > 0 && (
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                  <ImageIcon className="w-4 h-4 text-pink-500" />
+                  Fotografie kůže z tohoto dne ({skinEntriesForDate.length})
+                </h4>
+                <div className="flex flex-wrap gap-4">
+                  {skinEntriesForDate.map(entry => {
+                    const entryDate = new Date(entry.timestamp);
+                    return (
+                      <div 
+                        key={entry.id} 
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 bg-black w-24 h-24 md:w-32 md:h-32 shrink-0 shadow-sm cursor-pointer hover:shadow-md transition-all"
+                        onClick={() => setFullscreenImage(entry.image)}
+                      >
+                        <img src={entry.image} alt="Kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <span className="text-white text-[10px] font-bold shadow-sm">
+                            {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={saveEntry}

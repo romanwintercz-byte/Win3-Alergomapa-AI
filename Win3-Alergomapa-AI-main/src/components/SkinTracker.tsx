@@ -227,7 +227,7 @@ export const SkinTracker: React.FC = () => {
                   acc[dateStr].push(entry);
                   return acc;
                 }, {} as Record<string, typeof entries>)
-              ).map(([dateStr, dayEntries]) => {
+              ).map(([dateStr, dayEntries]: [string, any]) => {
                 const date = new Date(dateStr);
                 const isToday = new Date().toDateString() === date.toDateString();
                 const isYesterday = new Date(Date.now() - 86400000).toDateString() === date.toDateString();
