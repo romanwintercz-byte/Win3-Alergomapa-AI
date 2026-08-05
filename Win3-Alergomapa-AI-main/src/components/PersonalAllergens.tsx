@@ -23,6 +23,7 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
   const { profiles, activeProfileId, activeProfile, customAllergens, addCustomAllergen, removeCustomAllergen } = useAppContext();
   const [name, setName] = useState('');
   const [category, setCategory] = useState<CustomAllergenCategory>('food');
+  const [status, setStatus] = useState<import('../types').VerificationStatus>('suspected');
   const [selectedProfileId, setSelectedProfileId] = useState<string>(activeProfileId === 'all' ? (profiles[0]?.id || '') : activeProfileId);
   const [isAdding, setIsAdding] = useState(false);
 
@@ -30,8 +31,9 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
     e.preventDefault();
     if (name.trim()) {
       const targetId = activeProfileId === 'all' ? selectedProfileId : activeProfileId;
-      addCustomAllergen({ name: name.trim(), category }, targetId);
+      addCustomAllergen({ name: name.trim(), category, status }, targetId);
       setName('');
+      setStatus('suspected');
       setIsAdding(false);
     }
   };
@@ -148,6 +150,19 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
                 ))}
               </select>
             </div>
+            
+            <div className="sm:col-span-3">
+              <label className="block text-xs font-semibold text-slate-600 mb-1">Stav verifikace:</label>
+              <select
+                value={status}
+                onChange={(e) => setStatus(e.target.value as import('../types').VerificationStatus)}
+                className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500/50"
+              >
+                <option value="confirmed">Potvrzeno lékařem (Medicínsky diagnostikováno)</option>
+                <option value="suspected">Podezření / Eliminační dieta (Probíhá testování)</option>
+                <option value="monitored">Sledováno / Intolerance (Hlídání diskomfortu)</option>
+              </select>
+            </div>
           </div>
 
           <div className="flex justify-end gap-2 mb-4">
@@ -219,7 +234,18 @@ export const PersonalAllergens: React.FC<{ data: AirQualityData }> = ({ data }) 
                           </span>
                         )}
                       </div>
-                      <p className="text-xs text-slate-500">{catInfo?.label}</p>
+                      <div className="flex items-center gap-2 mt-0.5">
+                        <p className="text-xs text-slate-500">{catInfo?.label}</p>
+                        {allergen.status === 'confirmed' && (
+                          <span className="text-[10px] bg-rose-100 text-rose-700 px-1.5 py-0.5 rounded font-bold">Potvrzeno</span>
+                        )}
+                        {(allergen.status === 'suspected' || !allergen.status) && (
+                          <span className="text-[10px] bg-amber-100 text-amber-700 px-1.5 py-0.5 rounded font-bold">Podezření</span>
+                        )}
+                        {allergen.status === 'monitored' && (
+                          <span className="text-[10px] bg-blue-100 text-blue-700 px-1.5 py-0.5 rounded font-bold">Sledováno</span>
+                        )}
+                      </div>
                     </div>
                   </div>
                   <button

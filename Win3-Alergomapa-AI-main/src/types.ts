@@ -43,10 +43,13 @@ export interface AllergenInfo {
 
 export type CustomAllergenCategory = 'food' | 'animal' | 'mite' | 'other';
 
+export type VerificationStatus = 'confirmed' | 'suspected' | 'monitored';
+
 export interface CustomAllergen {
   id: string;
   name: string;
   category: CustomAllergenCategory;
+  status?: VerificationStatus;
 }
 
 export interface DiaryEntry {
@@ -56,6 +59,13 @@ export interface DiaryEntry {
   symptoms: string[];
   medicationsTaken: string[]; // IDs of medications taken
   note?: string;
+}
+
+export interface SkinDiaryEntry {
+  id: string;
+  timestamp: string; // ISO string
+  image: string; // Base64 data URL
+  note: string;
 }
 
 export interface Medication {
@@ -75,8 +85,35 @@ export interface UserProfile {
   avatarEmoji: string;
   trackedAllergens: AllergenKey[];
   customAllergens: CustomAllergen[];
+  allergenStatuses?: Record<string, VerificationStatus>;
   diaryEntries?: DiaryEntry[];
+  skinDiaryEntries?: SkinDiaryEntry[];
   medications?: Medication[];
   bloodTestResults?: Record<string, number>;
   color?: string;
+}
+
+export type InteractionSeverity = 'CRITICAL' | 'WARNING' | 'INFO';
+export type ItemType = 'medication' | 'allergy' | 'diet' | 'supplement';
+
+export interface InteractionRule {
+  id: string;
+  triggerType: ItemType;
+  triggerKeywords: string[]; 
+  targetType: ItemType;
+  targetKeywords: string[];
+  severity: InteractionSeverity;
+  message: string;
+  timeSpacingHours?: number;
+  description?: string;
+}
+
+export interface InteractionResult {
+  ruleId: string;
+  severity: InteractionSeverity;
+  message: string;
+  timeSpacingHours?: number;
+  triggerMatch: string;
+  targetMatch?: string;
+  description?: string;
 }

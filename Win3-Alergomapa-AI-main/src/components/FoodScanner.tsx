@@ -21,15 +21,41 @@ export const FoodScanner: React.FC = () => {
 
   const handleFileChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        setImageSrc(event.target?.result as string);
-        setResult(null);
-        setError(null);
+    if (!file) return;
+    
+    setResult(null);
+    setError(null);
+
+    const reader = new FileReader();
+    reader.onload = (event) => {
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        let width = img.width;
+        let height = img.height;
+        
+        // Zmenšení pro optimalizaci a limity payloadu
+        const MAX_SIZE = 1200;
+        if (width > height && width > MAX_SIZE) {
+          height *= MAX_SIZE / width;
+          width = MAX_SIZE;
+        } else if (height > MAX_SIZE) {
+          width *= MAX_SIZE / height;
+          height = MAX_SIZE;
+        }
+        
+        canvas.width = width;
+        canvas.height = height;
+        const ctx = canvas.getContext('2d');
+        ctx?.drawImage(img, 0, 0, width, height);
+        
+        // Zmenšený base64 (jpeg 0.7 kvalita)
+        const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.7);
+        setImageSrc(compressedDataUrl);
       };
-      reader.readAsDataURL(file);
-    }
+      img.src = event.target?.result as string;
+    };
+    reader.readAsDataURL(file);
   };
 
   const handleScan = async () => {
@@ -41,12 +67,27 @@ export const FoodScanner: React.FC = () => {
 
     try {
       // Gather allergens for prompt
-      const trackedNames = currentProfile.trackedAllergens.map(id => ALLERGENS.find(a => a.id === id)?.name).filter(Boolean);
-      const customNames = currentProfile.customAllergens.map(a => a.name);
-      const allAllergens = [...trackedNames, ...customNames];
+      const trackedNames = currentProfile.trackedAllergens.map(id => {
+        const info = ALLERGENS.find(a => a.id === id);
+        if (!info) return null;
+        const status = currentProfile.allergenStatuses?.[id] || 'suspected';
+        let statusText = 'Podezření';
+        if (status === 'confirmed') statusText = 'Potvrzeno lékařem';
+        if (status === 'monitored') statusText = 'Sledováno (Intolerance, ne anafylaxe)';
+        return `${info.name} (${statusText})`;
+      }).filter(Boolean);
+      const customAllergensWithStatus = currentProfile.customAllergens.map(a => {
+        let statusText = 'Podezření';
+        if (a.status === 'confirmed') statusText = 'Potvrzeno lékařem';
+        if (a.status === 'monitored') statusText = 'Sledováno (Intolerance, ne anafylaxe)';
+        return `${a.name} (${statusText})`;
+      });
+      const allAllergens = [...trackedNames, ...customAllergensWithStatus];
+      
+      const medications = (currentProfile.medications || []).map(m => m.name);
 
-      if (allAllergens.length === 0) {
-        setError("Profil nemá nastavené žádné alergeny ke kontrole. Přidejte je nejprve v sekci Alergeny.");
+      if (allAllergens.length === 0 && medications.length === 0) {
+        setError("Profil nemá nastavené žádné alergeny ani léky ke kontrole. Přidejte je nejprve v sekci Zdraví.");
         setIsScanning(false);
         return;
       }
@@ -57,6 +98,7 @@ export const FoodScanner: React.FC = () => {
         body: JSON.stringify({
           image: imageSrc,
           allergens: allAllergens,
+          medications: medications,
           profileName: currentProfile.name
         })
       });
@@ -94,13 +136,21 @@ export const FoodScanner: React.FC = () => {
             <Camera className="w-5 h-5 text-indigo-600" />
           </div>
           <div>
-            <h2 className="text-xl font-bold text-slate-800">Skener složení</h2>
+            <h2 className="text-xl font-bold text-slate-800 flex items-center gap-2">
+              Skener složení
+              <span className="text-[10px] bg-indigo-100 text-indigo-700 px-2 py-0.5 rounded-full font-black uppercase tracking-wider">Beta verze</span>
+            </h2>
             <p className="text-sm text-slate-500">Kontrola pro profil: <span className="font-bold text-slate-700">{currentProfile.avatarEmoji} {currentProfile.name}</span></p>
           </div>
         </div>
 
+        <div className="bg-amber-50 border border-amber-200 p-4 rounded-xl mb-6 flex gap-3 text-amber-800">
+          <AlertTriangle className="w-5 h-5 shrink-0" />
+          <p className="text-sm font-medium">Tato funkce je aktuálně ve fázi testování. Občas se může objevit chybová hláška z důvodu načítání a kapacity AI. Děkujeme za trpělivost!</p>
+        </div>
+
         <p className="text-slate-600 text-sm mb-6 max-w-2xl">
-          Vyfoťte zadní stranu obalu se složením potraviny. Umělá inteligence přečte text a porovná ho s alergickým profilem (jak osobní alergeny, tak zkřížené reakce u pylů).
+          Vyfoťte zadní stranu obalu se složením potraviny. Umělá inteligence přečte text a porovná ho s alergickým profilem (jak osobní alergeny, tak interakce léků).
         </p>
 
         <div className="flex flex-col md:flex-row gap-6">
@@ -223,7 +273,7 @@ export const FoodScanner: React.FC = () => {
             )}
 
             {!result && !error && !isScanning && (
-              <div className="h-full border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-50/50">
+              <div className="h-full border-2 border-dashed border-slate-200 rounded-2xl flex flex-col items-center justify-center p-6 text-center text-slate-400 bg-slate-50/50 min-h-[256px]">
                 <ShieldCheck className="w-10 h-10 mb-3 text-slate-300" />
                 <h4 className="font-bold text-slate-500 mb-1">Čekám na fotografii</h4>
                 <p className="text-sm max-w-xs">Nahrajte etiketu a já zkontroluji všechny alergeny v profilu.</p>

@@ -9,15 +9,19 @@ import { AqiWidget } from './AqiWidget';
 import { CurrentStatus } from './CurrentStatus';
 import { PollenChart } from './PollenChart';
 import { PersonalAllergens } from './PersonalAllergens';
+import { PersonalMedications } from './PersonalMedications';
 import { VisualAllergyProfile } from './VisualAllergyProfile';
+import { AllergyEducationGuide } from './AllergyEducationGuide';
+import { MedicationEducationGuide } from './MedicationEducationGuide';
 import { ChatAssistant } from './ChatAssistant';
 import { SymptomDiary } from './SymptomDiary';
 import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
 import { FoodScanner } from './FoodScanner';
-import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode } from 'lucide-react';
+import { SkinTracker } from './SkinTracker';
+import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon } from 'lucide-react';
 
-type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner';
+type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner' | 'skin';
 
 export const Dashboard: React.FC = () => {
   const { currentLocation, activeProfileId } = useAppContext();
@@ -112,7 +116,7 @@ export const Dashboard: React.FC = () => {
               }`}
             >
               <Bug className="w-6 h-6 md:w-4 md:h-4" />
-              <span>Alergeny</span>
+              <span>Zdraví</span>
             </button>
             <button
               onClick={() => handleTabChange('diary')}
@@ -138,7 +142,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('scanner')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
                 activeTab === 'scanner'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -146,6 +150,18 @@ export const Dashboard: React.FC = () => {
             >
               <ScanBarcode className="w-6 h-6 md:w-4 md:h-4" />
               <span>Skener</span>
+              <span className="absolute top-1 right-1 md:top-2 md:right-2 text-[8px] bg-indigo-100 text-indigo-700 px-1.5 py-0.5 rounded-full font-black uppercase tracking-wider">Beta</span>
+            </button>
+            <button
+              onClick={() => handleTabChange('skin')}
+              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+                activeTab === 'skin'
+                  ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
+                  : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
+              }`}
+            >
+              <ImageIcon className="w-6 h-6 md:w-4 md:h-4" />
+              <span>Kůže</span>
             </button>
           </div>
         </div>
@@ -177,7 +193,10 @@ export const Dashboard: React.FC = () => {
                 {activeTab === 'allergens' && (
                   <>
                     <PersonalAllergens data={data} />
+                    <PersonalMedications />
+                    <MedicationEducationGuide />
                     <VisualAllergyProfile />
+                    <AllergyEducationGuide />
                     <PollenChart data={data} />
                   </>
                 )}
@@ -186,6 +205,9 @@ export const Dashboard: React.FC = () => {
                 )}
                 {activeTab === 'scanner' && (
                   <FoodScanner />
+                )}
+                {activeTab === 'skin' && (
+                  <SkinTracker />
                 )}
               </div>
             ) : null}
