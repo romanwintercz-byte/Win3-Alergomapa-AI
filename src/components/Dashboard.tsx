@@ -19,7 +19,7 @@ import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
 import { FoodScanner } from './FoodScanner';
 import { SkinTracker } from './SkinTracker';
-import { DataTransferModal } from './DataTransferModal';
+import { DataTransferModal } from './DataTransferModal.tsx';
 import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon, Settings } from 'lucide-react';
 
 type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner' | 'skin';

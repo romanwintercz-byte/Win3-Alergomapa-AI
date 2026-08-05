@@ -1,11 +1,12 @@
 import React, { useState, useRef } from 'react';
 import { useAppContext } from '../store';
-import { Camera, Image as ImageIcon, Plus, Trash2, Clock, AlertTriangle } from 'lucide-react';
+import { Camera, Image as ImageIcon, Plus, Trash2, Clock, AlertTriangle, X } from 'lucide-react';
 
 export const SkinTracker: React.FC = () => {
   const { activeProfileId, activeProfile, updateProfile } = useAppContext();
   const [isAdding, setIsAdding] = useState(false);
   const [photoDataUrl, setPhotoDataUrl] = useState<string | null>(null);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [note, setNote] = useState('');
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -218,58 +219,103 @@ export const SkinTracker: React.FC = () => {
               </div>
             )
           ) : (
-            <div className="relative">
-              {/* Timeline line */}
-              <div className="absolute left-[27px] md:left-[39px] top-4 bottom-4 w-0.5 bg-slate-100 rounded-full" />
-              
-              <div className="space-y-8">
-                {entries.map((entry) => {
-                  const date = new Date(entry.timestamp);
-                  const isToday = new Date().toDateString() === date.toDateString();
-                  
-                  return (
-                    <div key={entry.id} className="relative flex gap-4 md:gap-6 animate-in fade-in slide-in-from-bottom-4">
-                      {/* Timeline dot */}
-                      <div className="relative z-10 w-14 h-14 md:w-20 md:h-20 shrink-0 bg-white rounded-full border-4 border-slate-50 flex flex-col items-center justify-center shadow-sm">
-                        <span className="text-[10px] md:text-xs font-bold text-slate-400 uppercase">
-                          {isToday ? 'Dnes' : date.toLocaleDateString('cs-CZ', { day: 'numeric', month: 'short' })}
-                        </span>
-                        <span className="text-xs md:text-sm font-black text-slate-700 flex items-center gap-1">
-                          <Clock className="w-3 h-3 text-pink-500" />
-                          {date.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
-                        </span>
-                      </div>
+            <div className="space-y-10">
+              {Object.entries(
+                entries.reduce((acc, entry) => {
+                  const dateStr = new Date(entry.timestamp).toDateString();
+                  if (!acc[dateStr]) acc[dateStr] = [];
+                  acc[dateStr].push(entry);
+                  return acc;
+                }, {} as Record<string, typeof entries>)
+              ).map(([dateStr, dayEntries]: [string, any]) => {
+                const date = new Date(dateStr);
+                const isToday = new Date().toDateString() === date.toDateString();
+                const isYesterday = new Date(Date.now() - 86400000).toDateString() === date.toDateString();
+                
+                const dateLabel = isToday ? 'Dnes' : isYesterday ? 'Včera' : date.toLocaleDateString('cs-CZ', { weekday: 'long', day: 'numeric', month: 'long' });
+
+                return (
+                  <div key={dateStr} className="animate-in fade-in slide-in-from-bottom-4">
+                    <h3 className="font-bold text-slate-800 text-lg mb-4 flex items-center gap-2 capitalize">
+                      {dateLabel}
+                      {!isToday && !isYesterday && <span className="text-sm font-normal text-slate-500">({date.toLocaleDateString('cs-CZ')})</span>}
+                    </h3>
+                    
+                    <div className="relative">
+                      {/* Timeline line for this day */}
+                      <div className="absolute left-[27px] md:left-[39px] top-4 bottom-4 w-0.5 bg-slate-100 rounded-full" />
                       
-                      {/* Content Card */}
-                      <div className="flex-1 bg-white border border-slate-100 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow group flex flex-col md:flex-row gap-4">
-                        <div className="w-full md:w-48 h-48 md:h-32 shrink-0 bg-black rounded-xl overflow-hidden cursor-pointer">
-                          <img src={entry.image} alt="Záznam kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                        </div>
-                        
-                        <div className="flex-1 flex flex-col justify-between">
-                          <p className="text-sm md:text-base text-slate-700 leading-relaxed font-medium">
-                            {entry.note || <span className="text-slate-400 italic">Bez poznámky</span>}
-                          </p>
-                          
-                          <div className="mt-4 flex justify-end">
-                            <button 
-                              onClick={() => handleDelete(entry.id)}
-                              className="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-1 bg-slate-50 hover:bg-rose-50 px-3 py-1.5 rounded-lg"
-                            >
-                              <Trash2 className="w-3.5 h-3.5" />
-                              Smazat
-                            </button>
-                          </div>
-                        </div>
+                      <div className="space-y-6">
+                        {dayEntries.map((entry) => {
+                          const entryDate = new Date(entry.timestamp);
+                          return (
+                            <div key={entry.id} className="relative flex gap-4 md:gap-6">
+                              {/* Timeline dot */}
+                              <div className="relative z-10 w-14 h-14 md:w-20 md:h-20 shrink-0 bg-white rounded-full border-4 border-slate-50 flex flex-col items-center justify-center shadow-sm">
+                                <Clock className="w-4 h-4 text-pink-500 mb-0.5" />
+                                <span className="text-xs md:text-sm font-black text-slate-700">
+                                  {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                                </span>
+                              </div>
+                              
+                              {/* Content Card */}
+                              <div className="flex-1 bg-white border border-slate-100 rounded-2xl p-4 md:p-5 shadow-sm hover:shadow-md transition-shadow group flex flex-col md:flex-row gap-4">
+                                <div 
+                                  className="w-full md:w-48 h-48 md:h-32 shrink-0 bg-black rounded-xl overflow-hidden cursor-pointer"
+                                  onClick={() => setFullscreenImage(entry.image)}
+                                >
+                                  <img src={entry.image} alt="Záznam kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                                </div>
+                                
+                                <div className="flex-1 flex flex-col justify-between">
+                                  <p className="text-sm md:text-base text-slate-700 leading-relaxed font-medium">
+                                    {entry.note || <span className="text-slate-400 italic">Bez poznámky</span>}
+                                  </p>
+                                  
+                                  <div className="mt-4 flex justify-end">
+                                    <button 
+                                      onClick={() => handleDelete(entry.id)}
+                                      className="text-xs font-bold text-slate-400 hover:text-rose-500 transition-colors flex items-center gap-1 bg-slate-50 hover:bg-rose-50 px-3 py-1.5 rounded-lg"
+                                    >
+                                      <Trash2 className="w-3.5 h-3.5" />
+                                      Smazat
+                                    </button>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  );
-                })}
-              </div>
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>
       </div>
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button 
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img 
+            src={fullscreenImage} 
+            alt="Kůže detail" 
+            className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200" 
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
+      )}
     </div>
   );
 };
