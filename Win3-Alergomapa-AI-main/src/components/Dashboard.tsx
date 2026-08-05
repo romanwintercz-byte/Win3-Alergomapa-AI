@@ -95,10 +95,10 @@ export const Dashboard: React.FC = () => {
 
         {/* Tabs Navigation */}
         <div className="fixed bottom-0 left-0 right-0 z-50 bg-white border-t border-slate-200 shadow-[0_-4px_20px_-10px_rgba(0,0,0,0.1)] md:shadow-none md:sticky md:top-20 md:z-30 md:bg-slate-50/95 md:backdrop-blur-xl md:border-none pb-[env(safe-area-inset-bottom)] md:pb-0 mb-0 md:mb-8 md:pt-4 md:-mx-2 md:px-2 transition-all">
-          <div className="flex md:bg-slate-100 md:p-1 md:rounded-2xl overflow-x-auto hide-scrollbar gap-1 md:gap-0 justify-around md:justify-start">
+          <div className="flex md:bg-slate-100 md:p-1 md:rounded-2xl overflow-x-auto hide-scrollbar gap-2 md:gap-0 justify-start px-2 md:px-0">
             <button
               onClick={() => handleTabChange('overview')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'overview'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -109,7 +109,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('allergens')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'allergens'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -120,7 +120,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('diary')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'diary'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -131,7 +131,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('planner')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'planner'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -142,7 +142,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('scanner')}
-              className={`relative flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`relative flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'scanner'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
@@ -154,7 +154,7 @@ export const Dashboard: React.FC = () => {
             </button>
             <button
               onClick={() => handleTabChange('skin')}
-              className={`flex-1 flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all md:min-w-[120px] ${
+              className={`flex-1 shrink-0 min-w-[72px] md:min-w-[120px] flex flex-col md:flex-row items-center justify-center gap-1 md:gap-2 px-2 py-3 md:px-6 md:py-3 rounded-xl text-[10px] md:text-sm font-bold transition-all ${
                 activeTab === 'skin'
                   ? 'text-indigo-600 bg-indigo-50/50 md:bg-white md:shadow-sm'
                   : 'text-slate-500 hover:text-slate-700 hover:bg-slate-50 md:hover:bg-transparent'
