@@ -61,6 +61,13 @@ export interface DiaryEntry {
   note?: string;
 }
 
+export interface SkinDiaryEntry {
+  id: string;
+  timestamp: string; // ISO string
+  image: string; // Base64 data URL
+  note: string;
+}
+
 export interface Medication {
   id: string;
   name: string;
@@ -80,6 +87,7 @@ export interface UserProfile {
   customAllergens: CustomAllergen[];
   allergenStatuses?: Record<string, VerificationStatus>;
   diaryEntries?: DiaryEntry[];
+  skinDiaryEntries?: SkinDiaryEntry[];
   medications?: Medication[];
   bloodTestResults?: Record<string, number>;
   color?: string;
