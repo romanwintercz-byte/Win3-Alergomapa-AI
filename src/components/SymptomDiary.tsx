@@ -336,7 +336,7 @@ export const SymptomDiary: React.FC = () => {
                         onClick={() => setFullscreenImage(entry.image)}
                       >
                         <img src={entry.image} alt="Kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 transition-opacity">
                           <span className="text-white text-[10px] font-bold shadow-sm">
                             {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                           </span>
@@ -475,7 +475,7 @@ export const SymptomDiary: React.FC = () => {
                       onClick={() => setFullscreenImage(entry.image)}
                     >
                       <img src={entry.image} alt="Kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
-                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 transition-opacity">
                         <span className="text-white text-xs font-bold shadow-sm">
                           {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
                         </span>
