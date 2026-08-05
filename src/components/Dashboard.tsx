@@ -19,7 +19,8 @@ import { SmartAlerts } from './SmartAlerts';
 import { TripPlanner } from './TripPlanner';
 import { FoodScanner } from './FoodScanner';
 import { SkinTracker } from './SkinTracker';
-import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon } from 'lucide-react';
+import { DataTransferModal } from './DataTransferModal';
+import { CloudRain, Loader2, MapPin, Activity, Book, Bug, Map, ScanBarcode, Image as ImageIcon, Settings } from 'lucide-react';
 
 type Tab = 'overview' | 'allergens' | 'diary' | 'planner' | 'scanner' | 'skin';
 
@@ -29,6 +30,7 @@ export const Dashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [activeTab, setActiveTab] = useState<Tab>('overview');
+  const [showDataTransfer, setShowDataTransfer] = useState(false);
 
   const handleTabChange = (tab: Tab) => {
     setActiveTab(tab);
@@ -75,8 +77,15 @@ export const Dashboard: React.FC = () => {
             </h1>
           </div>
           
-          <div className="flex-1 flex justify-end">
+          <div className="flex-1 flex justify-end items-center gap-2">
             <LocationSearch />
+            <button 
+              onClick={() => setShowDataTransfer(true)}
+              className="p-2 md:p-2.5 text-slate-400 hover:text-indigo-600 hover:bg-indigo-50 rounded-xl transition-colors"
+              title="Záloha a obnova dat"
+            >
+              <Settings className="w-5 h-5 md:w-6 md:h-6" />
+            </button>
           </div>
         </div>
       </header>
@@ -216,6 +225,10 @@ export const Dashboard: React.FC = () => {
       </main>
       
       <ChatAssistant data={data} />
+      
+      {showDataTransfer && (
+        <DataTransferModal onClose={() => setShowDataTransfer(false)} />
+      )}
     </div>
   );
 };
