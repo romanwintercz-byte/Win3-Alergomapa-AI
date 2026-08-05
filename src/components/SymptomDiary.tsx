@@ -4,7 +4,7 @@ import { DiaryEntry, Medication } from '../types';
 import { format, subDays, addDays, isSameDay } from 'date-fns';
 import { cs } from 'date-fns/locale';
 import { AllergyReportModal } from "./AllergyReportModal.tsx";
-import { Plus, Pill, Save, Calendar, Activity, X, ChevronLeft, ChevronRight, Stethoscope, Book } from 'lucide-react';
+import { Plus, Pill, Save, Calendar, Activity, X, ChevronLeft, ChevronRight, Stethoscope, Book, Image as ImageIcon } from 'lucide-react';
 
 const COMMON_SYMPTOMS = [
   'Kýchání', 'Rýma (vodnatá)', 'Ucpaný nos', 'Svědění očí', 
@@ -28,6 +28,7 @@ export const SymptomDiary: React.FC = () => {
   // Medications manager
   const [showReportModal, setShowReportModal] = useState(false);
   const [showMedsManager, setShowMedsManager] = useState(false);
+  const [fullscreenImage, setFullscreenImage] = useState<string | null>(null);
   const [newMedName, setNewMedName] = useState('');
   const [newMedType, setNewMedType] = useState<'pill' | 'spray' | 'drops' | 'other'>('pill');
   const [newMedUsageType, setNewMedUsageType] = useState<'regular' | 'as_needed'>('regular');
@@ -48,6 +49,9 @@ export const SymptomDiary: React.FC = () => {
 
   const dateStr = format(selectedDate, 'yyyy-MM-dd');
   const existingEntry = activeProfile.diaryEntries?.find(e => e.date === dateStr);
+  const skinEntriesForDate = (activeProfile.skinDiaryEntries || []).filter(e => {
+    return format(new Date(e.timestamp), 'yyyy-MM-dd') === dateStr;
+  });
   const userMeds = activeProfile.medications || [];
 
   const handleDateChange = (days: number) => {
@@ -315,6 +319,35 @@ export const SymptomDiary: React.FC = () => {
               />
             </div>
 
+            {/* Skin entries for this date in edit mode */}
+            {skinEntriesForDate.length > 0 && (
+              <div className="pt-4 border-t border-slate-100">
+                <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                  <ImageIcon className="w-4 h-4 text-pink-500" />
+                  Fotografie kůže z tohoto dne ({skinEntriesForDate.length})
+                </h4>
+                <div className="flex flex-wrap gap-4">
+                  {skinEntriesForDate.map(entry => {
+                    const entryDate = new Date(entry.timestamp);
+                    return (
+                      <div 
+                        key={entry.id} 
+                        className="relative group rounded-xl overflow-hidden border border-slate-200 bg-black w-24 h-24 md:w-32 md:h-32 shrink-0 shadow-sm cursor-pointer hover:shadow-md transition-all"
+                        onClick={() => setFullscreenImage(entry.image)}
+                      >
+                        <img src={entry.image} alt="Kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                          <span className="text-white text-[10px] font-bold shadow-sm">
+                            {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                          </span>
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
+              </div>
+            )}
+
             <div className="pt-4 border-t border-slate-100 flex justify-end">
               <button
                 onClick={saveEntry}
@@ -415,13 +448,47 @@ export const SymptomDiary: React.FC = () => {
               <div className="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4 border border-slate-100">
                 <Plus className="w-6 h-6 text-slate-400" />
               </div>
-              <p className="text-slate-600 font-medium mb-4">Pro tento den nemáte žádný záznam.</p>
+              <p className="text-slate-600 font-medium mb-4">Pro tento den nemáte žádný záznam příznaků.</p>
               <button
                 onClick={startEditing}
                 className="px-6 py-2.5 bg-indigo-600 text-white font-bold rounded-xl hover:bg-indigo-700 transition-colors shadow-md shadow-indigo-200"
               >
                 Přidat záznam
               </button>
+            </div>
+          )}
+
+          {/* Skin entries for this date */}
+          {skinEntriesForDate.length > 0 && (
+            <div className={`mt-8 ${existingEntry ? 'pt-8 border-t border-slate-100' : ''}`}>
+              <h4 className="text-sm font-bold text-slate-800 flex items-center gap-2 mb-4">
+                <ImageIcon className="w-4 h-4 text-pink-500" />
+                Fotografie kůže ({skinEntriesForDate.length})
+              </h4>
+              <div className="flex flex-wrap gap-4">
+                {skinEntriesForDate.map(entry => {
+                  const entryDate = new Date(entry.timestamp);
+                  return (
+                    <div 
+                      key={entry.id} 
+                      className="relative group rounded-xl overflow-hidden border border-slate-200 bg-black w-32 h-32 md:w-40 md:h-40 shrink-0 shadow-sm cursor-pointer hover:shadow-md transition-all"
+                      onClick={() => setFullscreenImage(entry.image)}
+                    >
+                      <img src={entry.image} alt="Kůže" className="w-full h-full object-cover opacity-90 group-hover:opacity-100 transition-opacity" />
+                      <div className="absolute inset-0 bg-gradient-to-t from-black/60 to-transparent flex flex-col justify-end p-2 opacity-100 md:opacity-0 md:group-hover:opacity-100 transition-opacity">
+                        <span className="text-white text-xs font-bold shadow-sm">
+                          {entryDate.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {entry.note && (
+                          <span className="text-white/80 text-[10px] truncate shadow-sm">
+                            {entry.note}
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           )}
         </div>
@@ -523,6 +590,27 @@ export const SymptomDiary: React.FC = () => {
       
       {showReportModal && (
         <AllergyReportModal onClose={() => setShowReportModal(false)} />
+      )}
+
+      {/* Fullscreen Image Modal */}
+      {fullscreenImage && (
+        <div 
+          className="fixed inset-0 z-[100] bg-black/95 backdrop-blur-sm flex items-center justify-center p-4 animate-in fade-in duration-200"
+          onClick={() => setFullscreenImage(null)}
+        >
+          <button 
+            onClick={() => setFullscreenImage(null)}
+            className="absolute top-4 right-4 md:top-6 md:right-6 p-2 bg-white/10 hover:bg-white/20 text-white rounded-full transition-colors"
+          >
+            <X className="w-6 h-6" />
+          </button>
+          <img 
+            src={fullscreenImage} 
+            alt="Kůže detail" 
+            className="max-w-full max-h-[90vh] object-contain rounded-xl shadow-2xl animate-in zoom-in-95 duration-200" 
+            onClick={(e) => e.stopPropagation()}
+          />
+        </div>
       )}
     </div>
   );
